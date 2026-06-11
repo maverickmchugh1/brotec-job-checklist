@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Brotec Jobs">
+  <meta name="theme-color" content="#111111">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" type="image/png" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
+  <title>Brotec Blacktop — Job Checklist</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #111111;
+      --surface:      #1a1a1a;
+      --surface-2:    #222222;
+      --surface-3:    #2c2c2c;
+      --border:       #333333;
+      --accent:       #FFCC00;
+      --accent-dim:   rgba(255,204,0,0.15);
+      --text:         #ffffff;
+      --text-muted:   #999999;
+      --text-done:    #4a4a4a;
+      --danger:       #cc3333;
+      --danger-dim:   rgba(204,51,51,0.15);
+      --warning:      #ff8800;
+      --warning-dim:  rgba(255,136,0,0.10);
+      --success:      #22cc77;
+      --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      --radius:       10px;
+      --radius-sm:    6px;
+      --ease:         0.2s ease;
+    }
+
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding-bottom: calc(86px + env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior-y: none;
+    }
+
+    /* ─── HEADER ──────────────────────────────── */
+    .header {
+      background: #000;
+      border-bottom: 2px solid var(--accent);
+      padding: calc(14px + env(safe-area-inset-top)) 18px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    #logo-img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    #logo-wordmark {
+      display: none;
+      flex-direction: column;
+    }
+
+    #logo-wordmark .wm-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    #logo-wordmark .wm-sub {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .header-progress-wrap {
+      flex: 1;
+      text-align: right;
+    }
+
+    .header-count {
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .header-count strong {
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    .progress-track {
+      background: var(--surface-3);
+      border-radius: 99px;
+      height: 5px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    #progress-label { font-style: italic; }
+    #progress-pct   { color: var(--text-muted); }
+
+    /* ─── JOB INFO ────────────────────────────── */
+    .job-info {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+    }
+
+    .job-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .job-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .job-field label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .job-field input {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      padding: 9px 10px;
+      width: 100%;
+      -webkit-appearance: none;
+      transition: border-color var(--ease);
+    }
+
+    .job-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .job-field input::placeholder { color: #444; }
+
+    /* date input arrow color */
+    .job-field input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+    }
+
+    /* ─── TOOLBAR ─────────────────────────────── */
+    .toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 18px;
+      scrollbar-width: none;
+    }
+
+    .toolbar::-webkit-scrollbar { display: none; }
+
+    .chip {
+      align-items: center;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      gap: 5px;
+      padding: 6px 14px;
+      transition: all var(--ease);
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chip:hover, .chip:active {
+      background: var(--surface-3);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    /* ─── SECTIONS ────────────────────────────── */
+    .sections {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 14px;
+    }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color var(--ease);
+    }
+
+    .section.all-done {
+      border-color: rgba(255,204,0,0.4);
+    }
+
+    .section-header {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      gap: 10px;
+      min-height: 54px;
+      padding: 12px 14px;
+      transition: background var(--ease);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .section-header:active { background: var(--surface-2); }
+
+    .section-icon {
+      flex-shrink: 0;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .section-title {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .section-badge {
+      background: var(--surface-3);
+      border-radius: 99px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      transition: all var(--ease);
+    }
+
+    .section-badge.done {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .section-chevron {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      font-size: 11px;
+      transition: transform 0.25s ease;
+    }
+
+    .section.open .section-chevron { transform: rotate(180deg); }
+
+    /* Smooth grid accordion */
+    .section-body {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.28s ease;
+    }
+
+    .section.open .section-body { grid-template-rows: 1fr; }
+
+    .section-inner {
+      min-height: 0;
+      overflow: hidden;
+      padding: 0 14px 10px;
+    }
+
+    /* ─── ITEMS ───────────────────────────────── */
+    .item {
+      align-items: center;
+      border-bottom: 1px solid var(--surface-3);
+      cursor: pointer;
+      display: flex;
+      gap: 12px;
+      min-height: 52px;
+      padding: 8px 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .item:active { background: rgba(255,255,255,0.03); }
+
+    body.edit-mode .item { cursor: default; }
+    body.edit-mode .item-text { cursor: text; }
+
+    .item:last-of-type { border-bottom: none; }
+
+    .item.warning-item {
+      background: var(--warning-dim);
+      border-left: 3px solid var(--warning);
+      border-radius: 4px;
+      margin-left: -6px;
+      padding-left: 9px;
+    }
+
+    .item-cb {
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--surface-2);
+      border: 2px solid #444;
+      border-radius: 5px;
+      cursor: pointer;
+      flex-shrink: 0;
+      height: 26px;
+      min-width: 26px;
+      position: relative;
+      transition: all var(--ease);
+      width: 26px;
+    }
+
+    .item-cb:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .item-cb:checked::after {
+      border: 2.5px solid #000;
+      border-left: none;
+      border-top: none;
+      content: '';
+      height: 11px;
+      left: 7px;
+      position: absolute;
+      top: 3px;
+      transform: rotate(43deg);
+      width: 6px;
+    }
+
+    .item-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-text {
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.3;
+      transition: color var(--ease);
+    }
+
+    .item.checked .item-text {
+      color: var(--text-done);
+      text-decoration: line-through;
+    }
+
+    .item-note {
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .item-note.warn { color: var(--warning); font-weight: 700; }
+
+    .item-del {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      display: none;
+      flex-shrink: 0;
+      font-size: 20px;
+      line-height: 1;
+      opacity: 0.5;
+      padding: 4px 6px;
+      transition: opacity var(--ease);
+    }
+
+    .item-del:hover, .item-del:active { opacity: 1; }
+
+    body.edit-mode .item-del { display: block; }
+
+    /* ─── SECTION FOOTER ──────────────────────── */
+    .section-footer {
+      display: flex;
+      gap: 6px;
+      padding: 8px 0 2px;
+      flex-wrap: wrap;
+    }
+
+    .sec-btn {
+      align-items: center;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 500;
+      gap: 4px;
+      padding: 6px 12px;
+      transition: all var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sec-btn:hover, .sec-btn:active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .sec-btn-add {
+      display: none;
+    }
+
+    body.edit-mode .sec-btn-add { display: inline-flex; }
+    body.edit-mode .sec-btn-add:hover { border-color: var(--success); color: var(--success); }
+
+    /* ─── NOTES ───────────────────────────────── */
+    .section-notes {
+      padding: 6px 0 0;
+    }
+
+    .section-notes textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      min-height: 52px;
+      padding: 9px 10px;
+      resize: vertical;
+      transition: border-color var(--ease);
+      width: 100%;
+    }
+
+    .section-notes textarea:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .section-notes textarea::placeholder { color: #3a3a3a; }
+
+    /* ─── FOOTER BAR ──────────────────────────── */
+    .footer {
+      background: #000;
+      border-top: 1px solid var(--border);
+      bottom: 0;
+      display: flex;
+      gap: 8px;
+      left: 0;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      position: fixed;
+      right: 0;
+      z-index: 100;
+    }
+
+    .fbtn {
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      gap: 6px;
+      justify-content: center;
+      min-height: 46px;
+      padding: 10px 12px;
+      transition: all var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #btn-reset {
+      background: var(--danger-dim);
+      border-color: rgba(204,51,51,0.3);
+      color: var(--danger);
+      flex: 0 0 46px;
+    }
+
+    #btn-reset:hover, #btn-reset:active {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    #btn-edit {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      flex: 0 0 46px;
+    }
+
+    #btn-edit:hover, #btn-edit:active {
+      background: var(--surface-3);
+      color: var(--text);
+    }
+
+    #btn-edit.active {
+      background: var(--accent-dim);
+      border-color: rgba(255,204,0,0.4);
+      color: var(--accent);
+    }
+
+    #btn-share {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    #btn-share:hover, #btn-share:active {
+      background: var(--surface-3);
+      color: var(--text);
+    }
+
+    #btn-print {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      flex: 0 0 46px;
+    }
+
+    #btn-print:hover, #btn-print:active {
+      background: var(--surface-3);
+      color: var(--text);
+    }
+
+    /* ─── MODALS ──────────────────────────────── */
+    .overlay {
+      align-items: flex-end;
+      background: rgba(0,0,0,0.82);
+      bottom: 0;
+      display: flex;
+      left: 0;
+      opacity: 0;
+      pointer-events: none;
+      position: fixed;
+      right: 0;
+      top: 0;
+      transition: opacity 0.25s ease;
+      z-index: 200;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      border-top: 2px solid var(--border);
+      padding: 22px 18px calc(32px + env(safe-area-inset-bottom));
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+      width: 100%;
+    }
+
+    .overlay.open .modal { transform: translateY(0); }
+
+    .modal-handle {
+      background: var(--border);
+      border-radius: 99px;
+      height: 4px;
+      margin: 0 auto 16px;
+      width: 40px;
+    }
+
+    .modal h2 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .mbtn {
+      align-items: center;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      flex: 1;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mbtn-cancel {
+      background: var(--surface-2);
+      color: var(--text-muted);
+    }
+
+    .mbtn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .mbtn-danger:hover { filter: brightness(1.1); }
+
+    .mbtn-accent {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .mbtn-accent:hover { filter: brightness(1.08); }
+
+    /* Share URL box */
+    .share-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      word-break: break-all;
+    }
+
+    /* ─── TOAST ───────────────────────────────── */
+    .toast {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      bottom: calc(96px + env(safe-area-inset-bottom));
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      left: 50%;
+      opacity: 0;
+      padding: 9px 20px;
+      pointer-events: none;
+      position: fixed;
+      transform: translateX(-50%) translateY(8px);
+      transition: all 0.22s ease;
+      white-space: nowrap;
+      z-index: 300;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.good {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ─── PRINT ───────────────────────────────── */
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+        padding-bottom: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .header {
+        background: #fff;
+        border-bottom: 2px solid #000;
+        position: static;
+      }
+
+      #logo-img { filter: none; max-height: 40px; }
+
+      .header-count strong { color: #000; }
+      .header-count { color: #555; }
+      .progress-track { background: #ddd; }
+      .progress-fill { background: #000; }
+      .progress-labels { color: #666; }
+      #progress-label, #progress-pct { color: #666; }
+
+      .job-info { background: #f7f7f7; border-bottom: 1px solid #ccc; }
+      .job-field label { color: #555; }
+      .job-field input { background: transparent; border: none; color: #000; padding: 0; font-size: 14px; }
+
+      .toolbar, .footer, .item-del, .sec-btn-add { display: none !important; }
+
+      .sections { padding: 8px 0; gap: 6px; }
+
+      .section {
+        background: #fff;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .section-header {
+        background: #f0f0f0;
+        border-bottom: 1px solid #ccc;
+        cursor: default;
+        min-height: auto;
+        padding: 8px 12px;
+      }
+
+      .section-title { color: #000; font-size: 13px; }
+      .section-icon { display: none; }
+      .section-chevron { display: none; }
+      .section-badge { background: #e8e8e8; color: #555; font-size: 10px; }
+      .section-badge.done { background: #e8f5e9; color: #2e7d32; }
+
+      .section-body { display: block !important; max-height: none !important; grid-template-rows: unset !important; }
+      .section-inner { overflow: visible; padding: 4px 12px 8px; }
+
+      .item { border-bottom-color: #eee; min-height: auto; padding: 5px 0; }
+      .item.warning-item { background: #fff8f0; border-left-color: #e65100; }
+
+      .item-text { font-size: 13px; color: #000 !important; text-decoration: none !important; }
+      .item.checked .item-text { color: #aaa !important; text-decoration: line-through !important; }
+      .item-note { color: #666; font-size: 10px; }
+      .item-note.warn { color: #e65100; }
+
+      .item-cb {
+        border: 1.5px solid #999;
+        border-radius: 3px;
+        background: #fff;
+      }
+
+      .item-cb:checked { background: #333; border-color: #333; }
+
+      .section-notes textarea { background: #f9f9f9; border: 1px solid #ddd; color: #000; font-size: 12px; min-height: 30px; }
+
+      .sec-btn { display: none !important; }
+    }
+
+    /* ─── RESPONSIVE ──────────────────────────── */
+    @media (max-width: 380px) {
+      .job-info-grid { grid-template-columns: 1fr; }
+      .header { padding: 12px 14px 8px; }
+    }
+
+    @media (min-width: 600px) {
+      .sections { max-width: 680px; margin: 0 auto; }
+      .footer { max-width: 680px; margin: 0 auto; left: 50%; transform: translateX(-50%); right: auto; width: 100%; }
+      .job-info-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── HEADER ─────────────────────────────────── -->
+<header class="header">
+  <div class="header-top">
+    <img src="Brotec Logo no BG.png" id="logo-img" alt="Brotec Blacktop"
+      onerror="this.style.display='none';document.getElementById('logo-wordmark').style.display='flex'">
+    <div id="logo-wordmark">
+      <span class="wm-title">Brotec Blacktop</span>
+      <span class="wm-sub">Job Checklist</span>
+    </div>
+    <div class="header-progress-wrap">
+      <div class="header-count"><strong id="checked-count">0</strong> / <span id="total-count">0</span> items</div>
+    </div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <div class="progress-labels">
+    <span id="progress-label">Ready to go</span>
+    <span id="progress-pct">0%</span>
+  </div>
+</header>
+
+<!-- ─── JOB INFO ───────────────────────────────── -->
+<div class="job-info">
+  <div class="job-info-grid">
+    <div class="job-field">
+      <label>Job Name</label>
+      <input id="fi-name" type="text" placeholder="e.g. Smith Driveway" autocomplete="off">
+    </div>
+    <div class="job-field">
+      <label>Date</label>
+      <input id="fi-date" type="date">
+    </div>
+    <div class="job-field">
+      <label>Address</label>
+      <input id="fi-addr" type="text" placeholder="Job site address" autocomplete="off">
+    </div>
+    <div class="job-field">
+      <label>Crew</label>
+      <input id="fi-crew" type="text" placeholder="Crew members" autocomplete="off">
+    </div>
+  </div>
+</div>
+
+<!-- ─── TOOLBAR ────────────────────────────────── -->
+<div class="toolbar">
+  <button class="chip" id="tb-expand">↕ Expand All</button>
+  <button class="chip" id="tb-collapse">↑ Collapse All</button>
+  <button class="chip" id="tb-incomplete">⬜ Show Incomplete</button>
+</div>
+
+<!-- ─── SECTIONS ───────────────────────────────── -->
+<div class="sections" id="sections-root"></div>
+
+<!-- ─── FOOTER ─────────────────────────────────── -->
+<footer class="footer">
+  <button class="fbtn" id="btn-reset" title="Reset All">🗑</button>
+  <button class="fbtn" id="btn-edit"  title="Edit Mode">✏️</button>
+  <button class="fbtn" id="btn-share">🔗 Share Checklist</button>
+  <button class="fbtn" id="btn-print" title="Print">🖨</button>
+</footer>
+
+<!-- ─── RESET MODAL ────────────────────────────── -->
+<div class="overlay" id="ov-reset">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Reset All?</h2>
+    <p>All checkboxes will be cleared. Your custom items, edits, and job info will be kept. This can't be undone.</p>
+    <div class="modal-row">
+      <button class="mbtn mbtn-cancel" id="reset-cancel">Cancel</button>
+      <button class="mbtn mbtn-danger" id="reset-confirm">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SHARE MODAL ────────────────────────────── -->
+<div class="overlay" id="ov-share">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Share Checklist</h2>
+    <p>Send your crew a fresh, blank copy of this checklist.</p>
+    <div class="share-box" id="share-url-display"></div>
+    <div class="modal-row">
+      <button class="mbtn mbtn-cancel" id="share-cancel">Close</button>
+      <button class="mbtn mbtn-accent" id="share-copy">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TOAST ──────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════
+const SECTIONS = [
+  {
+    id: 'fuel-fluids', title: 'Fuel & Fluids', icon: '⛽',
+    items: [
+      { id: 'ff1', text: 'Premium fuel' },
+      { id: 'ff2', text: 'Mixed fuel' },
+      { id: 'ff3', text: 'Propane', note: 'Check all tanks' },
+      { id: 'ff4', text: '2-stroke oil' },
+      { id: 'ff5', text: 'Diesel' },
+    ]
+  },
+  {
+    id: 'equipment-prep', title: 'Equipment Prep', icon: '🔧',
+    items: [
+      { id: 'ep1', text: 'Weed wacker + string' },
+      { id: 'ep2', text: 'Power broom' },
+      { id: 'ep3', text: 'Edger + extra edger wheels' },
+      { id: 'ep4', text: 'Backpack blowers' },
+      { id: 'ep5', text: 'Billy Goats' },
+      { id: 'ep6', text: 'Crack Jet' },
+      { id: 'ep7', text: 'Router' },
+      { id: 'ep8', text: 'Oil Spot Primer' },
+      { id: 'ep9', text: 'Large metal wire brush', note: 'Inspect / replace?' },
+      { id: 'ep10', text: 'Small metal wire brush', note: 'Inspect / replace?' },
+    ]
+  },
+  {
+    id: 'crack-sealing', title: 'Crack Sealing', icon: '🔥',
+    items: [
+      { id: 'cs1', text: 'Banders' },
+      { id: 'cs2', text: 'Pour pot' },
+      { id: 'cs3', text: 'Squeegee', note: 'Check blades / replace?' },
+      { id: 'cs4', text: 'Large drip pan' },
+      { id: 'cs5', text: 'Torch' },
+      { id: 'cs6', text: 'Sparker / lighter' },
+      { id: 'cs7', text: 'Melter applicator' },
+    ]
+  },
+  {
+    id: 'sealcoating', title: 'Sealcoating', icon: '🖌️',
+    items: [
+      { id: 'sc1',  text: 'Spray tips' },
+      { id: 'sc2',  text: 'Spray tip container' },
+      { id: 'sc3',  text: 'Edge board' },
+      { id: 'sc4',  text: 'Sealcoat brushes' },
+      { id: 'sc5',  text: 'Edge brush' },
+      { id: 'sc6',  text: 'Spray pants' },
+      { id: 'sc7',  text: 'Wand plug' },
+      { id: 'sc8',  text: 'Weed sprayer bottle', note: 'Filled?' },
+      { id: 'sc9',  text: 'Bucket' },
+      { id: 'sc10', text: 'Shovel' },
+    ]
+  },
+  {
+    id: 'materials', title: 'Materials', icon: '📦',
+    items: [
+      { id: 'mat1', text: 'Rubber material', note: 'Confirm correct type for job' },
+      { id: 'mat2', text: 'Hot box', note: '⚠️ DF ONLY', warning: true },
+      { id: 'mat3', text: 'Sealcoat', note: 'Fill to desired volume' },
+      { id: 'mat4', text: 'Cold patch' },
+    ]
+  },
+  {
+    id: 'general-supplies', title: 'General Supplies', icon: '🧰',
+    items: [
+      { id: 'gs1', text: 'Ratchet straps' },
+      { id: 'gs2', text: 'Tamping rod' },
+      { id: 'gs3', text: 'Measuring stick' },
+      { id: 'gs4', text: 'Zip ties' },
+      { id: 'gs5', text: 'Tire fix kit' },
+      { id: 'gs6', text: 'Backup wedges' },
+      { id: 'gs7', text: 'GoPro' },
+      { id: 'gs8', text: 'Drone' },
+    ]
+  },
+  {
+    id: 'safety', title: 'Safety Equipment', icon: '🦺',
+    items: [
+      { id: 'saf1',  text: 'Gloves' },
+      { id: 'saf2',  text: 'Hearing protection / muffs' },
+      { id: 'saf3',  text: 'Gators' },
+      { id: 'saf4',  text: 'Eye protection' },
+      { id: 'saf5',  text: 'Masks' },
+      { id: 'saf6',  text: 'First aid kit' },
+      { id: 'saf7',  text: 'Traffic cones' },
+      { id: 'saf8',  text: 'Sunscreen' },
+      { id: 'saf9',  text: 'Hats' },
+      { id: 'saf10', text: 'Water' },
+      { id: 'saf11', text: 'Fire extinguishers' },
+      { id: 'saf12', text: 'Electrolyte mix' },
+    ]
+  },
+  {
+    id: 'cleaning', title: 'Cleaning', icon: '🧹',
+    items: [
+      { id: 'cl1', text: 'Paper towels' },
+      { id: 'cl2', text: 'Tub O Towels' },
+      { id: 'cl3', text: 'Grocery bags' },
+      { id: 'cl4', text: 'Shout spray' },
+    ]
+  },
+  {
+    id: 'post-sealing', title: 'Post-Sealing Box', icon: '🚧',
+    items: [
+      { id: 'ps1', text: 'Stakes' },
+      { id: 'ps2', text: 'Caution tape' },
+      { id: 'ps3', text: 'Duct tape' },
+      { id: 'ps4', text: 'Blue tape' },
+      { id: 'ps5', text: 'Rubber mallet' },
+    ]
+  },
+  {
+    id: 'binder', title: 'Binder', icon: '📋',
+    items: [
+      { id: 'bin1', text: 'Review sheet' },
+      { id: 'bin2', text: 'Business cards' },
+      { id: 'bin3', text: 'Receipts' },
+      { id: 'bin4', text: 'Paper proposals' },
+    ]
+  },
+  {
+    id: 'tools', title: 'Tools', icon: '🔩',
+    items: [
+      { id: 'tl1', text: 'Socket set' },
+      { id: 'tl2', text: 'Adjustable wrench' },
+      { id: 'tl3', text: 'Screwdriver' },
+      { id: 'tl4', text: 'Utility knife' },
+      { id: 'tl5', text: 'Sparker / lighter' },
+      { id: 'tl6', text: 'Locking pliers' },
+    ]
+  },
+  {
+    id: 'backup', title: 'Backup Items', icon: '♻️',
+    items: [
+      { id: 'bk1', text: 'Gloves' },
+      { id: 'bk2', text: 'Fuses' },
+      { id: 'bk3', text: 'Cord for rubber machine' },
+      { id: 'bk4', text: 'Edger wheels' },
+      { id: 'bk5', text: 'Wacker string' },
+      { id: 'bk6', text: 'Small metal wire brushes' },
+      { id: 'bk7', text: 'Ratchet straps' },
+    ]
+  },
+  {
+    id: 'pre-departure', title: 'Pre-Departure Inspection', icon: '✅',
+    items: [
+      { id: 'pd1', text: 'Thorough tire inspection', note: 'Truck + trailer' },
+      { id: 'pd2', text: 'All equipment strapped safely and securely' },
+      { id: 'pd3', text: 'Walk around vehicle and trailer for loose items' },
+      { id: 'pd4', text: 'Filter basket clean?' },
+    ]
+  },
+];
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+const LS_KEY = 'brotec-v1';
+
+function blankSectionState() {
+  return { collapsed: false, notes: '', checked: {}, customItems: [], renamed: {}, deleted: [] };
+}
+
+function blankState() {
+  const today = new Date().toISOString().slice(0, 10);
+  return { jobInfo: { name: '', date: today, addr: '', crew: '' }, sections: {} };
+}
+
+let S = (() => {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return blankState();
+})();
+
+function ss(id) {
+  if (!S.sections[id]) S.sections[id] = blankSectionState();
+  return S.sections[id];
+}
+
+function save() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (_) {}
+}
+
+// ════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════
+function visibleItems(sec) {
+  const st = ss(sec.id);
+  const base = sec.items.filter(it => !st.deleted.includes(it.id));
+  return [...base, ...st.customItems];
+}
+
+function checkedCount(sec) {
+  const st = ss(sec.id);
+  return visibleItems(sec).filter(it => st.checked[it.id]).length;
+}
+
+function totalChecked()  { return SECTIONS.reduce((a, s) => a + checkedCount(s), 0); }
+function totalItems()    { return SECTIONS.reduce((a, s) => a + visibleItems(s).length, 0); }
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════
+function renderAll() {
+  const root = document.getElementById('sections-root');
+  root.innerHTML = '';
+  SECTIONS.forEach(sec => root.appendChild(buildSection(sec)));
+}
+
+function buildSection(sec) {
+  const st    = ss(sec.id);
+  const items = visibleItems(sec);
+  const chk   = checkedCount(sec);
+  const done  = items.length > 0 && chk === items.length;
+  const allCheckedNow = items.length > 0 && items.every(it => st.checked[it.id]);
+
+  const div = document.createElement('div');
+  div.className = 'section' + (st.collapsed ? '' : ' open') + (done ? ' all-done' : '');
+  div.dataset.sid = sec.id;
+
+  div.innerHTML = `
+    <div class="section-header" role="button" tabindex="0" aria-expanded="${!st.collapsed}">
+      <span class="section-icon">${sec.icon}</span>
+      <span class="section-title">${esc(sec.title)}</span>
+      <span class="section-badge ${done ? 'done' : ''}">${chk}/${items.length}</span>
+      <span class="section-chevron">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="section-inner">
+        ${items.map(it => itemHTML(it, st, sec.id)).join('')}
+        <div class="section-footer">
+          <button class="sec-btn sec-btn-checkall" data-sid="${sec.id}">${allCheckedNow ? '☐ Uncheck All' : '☑ Check All'}</button>
+          <button class="sec-btn sec-btn-add" data-sid="${sec.id}">+ Add Item</button>
+        </div>
+        <div class="section-notes">
+          <textarea placeholder="Section notes…" data-sid="${sec.id}">${esc(st.notes || '')}</textarea>
+        </div>
+      </div>
+    </div>`;
+
+  // Header toggle
+  const hdr = div.querySelector('.section-header');
+  const toggle = () => {
+    st.collapsed = !st.collapsed;
+    div.classList.toggle('open', !st.collapsed);
+    hdr.setAttribute('aria-expanded', !st.collapsed);
+    save();
+  };
+  hdr.addEventListener('click', toggle);
+  hdr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+
+  // Checkboxes
+  div.querySelectorAll('.item-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      st.checked[cb.dataset.iid] = cb.checked;
+      cb.closest('.item').classList.toggle('checked', cb.checked);
+      save();
+      refreshBadge(sec.id);
+      updateProgress();
+    });
+  });
+
+  // Whole-row tap toggles the checkbox (not in edit mode, ignore taps on the checkbox itself)
+  div.querySelectorAll('.item').forEach(row => {
+    row.addEventListener('click', e => {
+      if (document.body.classList.contains('edit-mode')) return;
+      if (e.target.closest('.item-cb') || e.target.closest('.item-del')) return;
+      const cb = row.querySelector('.item-cb');
+      cb.checked = !cb.checked;
+      cb.dispatchEvent(new Event('change'));
+    });
+  });
+
+  // Delete buttons
+  div.querySelectorAll('.item-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const iid = btn.dataset.iid;
+      if (st.customItems.some(ci => ci.id === iid)) {
+        st.customItems = st.customItems.filter(ci => ci.id !== iid);
+      } else {
+        if (!st.deleted.includes(iid)) st.deleted.push(iid);
+      }
+      delete st.checked[iid];
+      save();
+      rerender(sec.id);
+    });
+  });
+
+  // Inline rename (edit mode)
+  div.querySelectorAll('.item-text[data-iid]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (!document.body.classList.contains('edit-mode')) return;
+      const iid = el.dataset.iid;
+      const old = el.textContent;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = old;
+      inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-family:var(--font);font-size:16px;padding:4px 6px;width:100%';
+      el.replaceWith(inp);
+      inp.focus(); inp.select();
+      const commit = () => {
+        const val = inp.value.trim() || old;
+        const ci = st.customItems.find(c => c.id === iid);
+        if (ci) ci.text = val; else st.renamed[iid] = val;
+        save();
+        rerender(sec.id);
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } });
+    });
+  });
+
+  // Check All
+  div.querySelector('.sec-btn-checkall').addEventListener('click', e => {
+    e.stopPropagation();
+    const all = visibleItems(sec);
+    const allOn = all.every(it => st.checked[it.id]);
+    all.forEach(it => { st.checked[it.id] = !allOn; });
+    save();
+    rerender(sec.id);
+    updateProgress();
+  });
+
+  // Add Item
+  div.querySelector('.sec-btn-add').addEventListener('click', e => {
+    e.stopPropagation();
+    const text = prompt('New item name:');
+    if (!text || !text.trim()) return;
+    st.customItems.push({ id: 'c' + Date.now(), text: text.trim() });
+    save();
+    rerender(sec.id);
+    updateProgress();
+  });
+
+  // Notes
+  div.querySelector('.section-notes textarea').addEventListener('input', function() {
+    st.notes = this.value;
+    save();
+  });
+
+  return div;
+}
+
+function itemHTML(item, st, sid) {
+  const chk  = st.checked[item.id] || false;
+  const text = (st.renamed && st.renamed[item.id]) ? st.renamed[item.id] : item.text;
+  const note = item.note || '';
+  const warn = item.warning || false;
+
+  return `
+    <div class="item${chk ? ' checked' : ''}${warn ? ' warning-item' : ''}">
+      <input type="checkbox" class="item-cb" data-iid="${item.id}" data-sid="${sid}" ${chk ? 'checked' : ''}>
+      <div class="item-body">
+        <div class="item-text" data-iid="${item.id}" data-sid="${sid}">${esc(text)}</div>
+        ${note ? `<div class="item-note${warn ? ' warn' : ''}">${esc(note)}</div>` : ''}
+      </div>
+      <button class="item-del" data-iid="${item.id}" data-sid="${sid}" title="Remove">×</button>
+    </div>`;
+}
+
+function rerender(sid) {
+  const sec  = SECTIONS.find(s => s.id === sid);
+  const root = document.getElementById('sections-root');
+  const old  = root.querySelector(`[data-sid="${sid}"]`);
+  if (old) root.replaceChild(buildSection(sec), old);
+  updateProgress();
+}
+
+function refreshBadge(sid) {
+  const sec  = SECTIONS.find(s => s.id === sid);
+  const el   = document.querySelector(`[data-sid="${sid}"]`);
+  if (!el) return;
+  const items = visibleItems(sec);
+  const chk   = checkedCount(sec);
+  const done  = items.length > 0 && chk === items.length;
+  const badge = el.querySelector('.section-badge');
+  if (badge) { badge.textContent = `${chk}/${items.length}`; badge.classList.toggle('done', done); }
+  el.classList.toggle('all-done', done);
+}
+
+function updateProgress() {
+  const total = totalItems();
+  const chk   = totalChecked();
+  const pct   = total > 0 ? Math.round((chk / total) * 100) : 0;
+
+  document.getElementById('checked-count').textContent = chk;
+  document.getElementById('total-count').textContent   = total;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  document.getElementById('progress-label').textContent =
+    pct === 0   ? 'Ready to go' :
+    pct === 100 ? '✓ All done — ready to roll!' :
+                  pct + '% complete';
+}
+
+// ════════════════════════════════════════════════
+// JOB INFO
+// ════════════════════════════════════════════════
+function initJobInfo() {
+  const fields = [
+    { el: 'fi-name', key: 'name' },
+    { el: 'fi-date', key: 'date' },
+    { el: 'fi-addr', key: 'addr' },
+    { el: 'fi-crew', key: 'crew' },
+  ];
+  fields.forEach(({ el, key }) => {
+    const inp = document.getElementById(el);
+    if (S.jobInfo[key] !== undefined) inp.value = S.jobInfo[key];
+    inp.addEventListener('input', () => { S.jobInfo[key] = inp.value; save(); });
+  });
+}
+
+// ════════════════════════════════════════════════
+// TOOLBAR
+// ════════════════════════════════════════════════
+document.getElementById('tb-expand').addEventListener('click', () => {
+  SECTIONS.forEach(s => { ss(s.id).collapsed = false; });
+  save(); renderAll(); updateProgress();
+});
+
+document.getElementById('tb-collapse').addEventListener('click', () => {
+  SECTIONS.forEach(s => { ss(s.id).collapsed = true; });
+  save(); renderAll(); updateProgress();
+});
+
+document.getElementById('tb-incomplete').addEventListener('click', () => {
+  SECTIONS.forEach(s => {
+    const items = visibleItems(s);
+    const done  = items.length > 0 && checkedCount(s) === items.length;
+    ss(s.id).collapsed = done;
+  });
+  save(); renderAll(); updateProgress();
+});
+
+// ════════════════════════════════════════════════
+// EDIT MODE
+// ════════════════════════════════════════════════
+const btnEdit = document.getElementById('btn-edit');
+btnEdit.addEventListener('click', () => {
+  const on = document.body.classList.toggle('edit-mode');
+  btnEdit.classList.toggle('active', on);
+  btnEdit.textContent = on ? '✅' : '✏️';
+  if (on) {
+    SECTIONS.forEach(s => { ss(s.id).collapsed = false; });
+    save(); renderAll(); updateProgress();
+    toast('Edit mode — tap item text to rename', false);
+  } else {
+    toast('Edit mode off', false);
+  }
+});
+
+// ════════════════════════════════════════════════
+// RESET
+// ════════════════════════════════════════════════
+document.getElementById('btn-reset').addEventListener('click', () => openModal('ov-reset'));
+document.getElementById('reset-cancel').addEventListener('click', () => closeModal('ov-reset'));
+document.getElementById('reset-confirm').addEventListener('click', () => {
+  SECTIONS.forEach(s => { ss(s.id).checked = {}; });
+  save();
+  closeModal('ov-reset');
+  renderAll();
+  updateProgress();
+  toast('Checklist reset', false);
+});
+
+// ════════════════════════════════════════════════
+// SHARE
+// ════════════════════════════════════════════════
+document.getElementById('btn-share').addEventListener('click', () => {
+  const url = window.location.href.split('#')[0].split('?')[0];
+  document.getElementById('share-url-display').textContent = url;
+  openModal('ov-share');
+});
+
+document.getElementById('share-cancel').addEventListener('click', () => closeModal('ov-share'));
+document.getElementById('share-copy').addEventListener('click', () => {
+  const url = document.getElementById('share-url-display').textContent;
+  if (navigator.share) {
+    navigator.share({ title: 'Brotec Blacktop — Job Checklist', url })
+      .then(() => { closeModal('ov-share'); toast('Shared!', true); })
+      .catch(() => clipCopy(url));
+  } else {
+    clipCopy(url);
+    closeModal('ov-share');
+  }
+});
+
+function clipCopy(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast('Link copied!', true));
+  } else {
+    const t = Object.assign(document.createElement('textarea'), { value: text });
+    Object.assign(t.style, { position:'fixed', opacity:'0' });
+    document.body.appendChild(t);
+    t.focus(); t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    toast('Link copied!', true);
+  }
+}
+
+// ════════════════════════════════════════════════
+// PRINT
+// ════════════════════════════════════════════════
+document.getElementById('btn-print').addEventListener('click', () => {
+  SECTIONS.forEach(s => { ss(s.id).collapsed = false; });
+  save(); renderAll(); updateProgress();
+  setTimeout(() => window.print(), 80);
+});
+
+// ════════════════════════════════════════════════
+// MODAL HELPERS
+// ════════════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+});
+
+// ════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════
+let _tTimer;
+function toast(msg, good) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (good ? ' good' : '');
+  clearTimeout(_tTimer);
+  _tTimer = setTimeout(() => { el.className = 'toast'; }, 2600);
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+initJobInfo();
+renderAll();
+updateProgress();
+</script>
+</body>
+</html>
