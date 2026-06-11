@@ -148,7 +148,7 @@
 
     .job-info-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2fr 1fr;
       gap: 10px;
     }
 
@@ -299,6 +299,46 @@
     }
 
     .section.open .section-chevron { transform: rotate(180deg); }
+
+    .section-del {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      display: none;
+      flex-shrink: 0;
+      font-size: 17px;
+      line-height: 1;
+      opacity: 0.6;
+      padding: 4px 8px;
+      transition: opacity var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .section-del:hover, .section-del:active { opacity: 1; }
+
+    body.edit-mode .section-del { display: block; }
+    body.edit-mode .section-title { cursor: text; }
+
+    .add-section-btn {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--success);
+      cursor: pointer;
+      display: none;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 16px;
+      text-align: center;
+      transition: background var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .add-section-btn:hover, .add-section-btn:active { background: var(--surface-2); }
+
+    body.edit-mode .add-section-btn { display: block; }
 
     /* Smooth grid accordion */
     .section-body {
@@ -731,7 +771,7 @@
       .job-field label { color: #555; }
       .job-field input { background: transparent; border: none; color: #000; padding: 0; font-size: 14px; }
 
-      .toolbar, .footer, .item-del, .sec-btn-add { display: none !important; }
+      .toolbar, .footer, .item-del, .sec-btn-add, .section-del, .add-section-btn { display: none !important; }
 
       .sections { padding: 8px 0; gap: 6px; }
 
@@ -789,7 +829,8 @@
     @media (min-width: 600px) {
       .sections { max-width: 680px; margin: 0 auto; }
       .footer { max-width: 680px; margin: 0 auto; left: 50%; transform: translateX(-50%); right: auto; width: 100%; }
-      .job-info-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+      .job-info { max-width: 680px; margin: 0 auto; }
+      .job-info-grid { grid-template-columns: 2fr 1fr; }
     }
   </style>
 </head>
@@ -804,16 +845,6 @@
       <span class="wm-title">Brotec Blacktop</span>
       <span class="wm-sub">Job Checklist</span>
     </div>
-    <div class="header-progress-wrap">
-      <div class="header-count"><strong id="checked-count">0</strong> / <span id="total-count">0</span> items</div>
-    </div>
-  </div>
-  <div class="progress-track">
-    <div class="progress-fill" id="progress-fill"></div>
-  </div>
-  <div class="progress-labels">
-    <span id="progress-label">Ready to go</span>
-    <span id="progress-pct">0%</span>
   </div>
 </header>
 
@@ -827,14 +858,6 @@
     <div class="job-field">
       <label>Date</label>
       <input id="fi-date" type="date">
-    </div>
-    <div class="job-field">
-      <label>Address</label>
-      <input id="fi-addr" type="text" placeholder="Job site address" autocomplete="off">
-    </div>
-    <div class="job-field">
-      <label>Crew</label>
-      <input id="fi-crew" type="text" placeholder="Crew members" autocomplete="off">
     </div>
   </div>
 </div>
@@ -1056,7 +1079,13 @@ function blankSectionState() {
 
 function blankState() {
   const today = new Date().toISOString().slice(0, 10);
-  return { jobInfo: { name: '', date: today, addr: '', crew: '' }, sections: {} };
+  return {
+    jobInfo: { name: '', date: today },
+    sections: {},
+    customSections: [],   // [{ id, title, icon, items: [] }]
+    deletedSections: [],  // base section ids that were removed
+    renamedSections: {},  // baseId -> custom title
+  };
 }
 
 let S = (() => {
@@ -1066,6 +1095,11 @@ let S = (() => {
   } catch (_) {}
   return blankState();
 })();
+
+// Backfill fields for state saved by older versions
+if (!Array.isArray(S.customSections))  S.customSections  = [];
+if (!Array.isArray(S.deletedSections)) S.deletedSections = [];
+if (!S.renamedSections || typeof S.renamedSections !== 'object') S.renamedSections = {};
 
 function ss(id) {
   if (!S.sections[id]) S.sections[id] = blankSectionState();
@@ -1079,9 +1113,23 @@ function save() {
 // ════════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════════
+// Base sections (minus deleted) followed by any custom sections the user added
+function visibleSections() {
+  const base = SECTIONS.filter(s => !S.deletedSections.includes(s.id));
+  return [...base, ...S.customSections];
+}
+
+function findSection(id) {
+  return visibleSections().find(s => s.id === id);
+}
+
+function sectionTitle(sec) {
+  return S.renamedSections[sec.id] || sec.title;
+}
+
 function visibleItems(sec) {
   const st = ss(sec.id);
-  const base = sec.items.filter(it => !st.deleted.includes(it.id));
+  const base = (sec.items || []).filter(it => !st.deleted.includes(it.id));
   return [...base, ...st.customItems];
 }
 
@@ -1090,8 +1138,8 @@ function checkedCount(sec) {
   return visibleItems(sec).filter(it => st.checked[it.id]).length;
 }
 
-function totalChecked()  { return SECTIONS.reduce((a, s) => a + checkedCount(s), 0); }
-function totalItems()    { return SECTIONS.reduce((a, s) => a + visibleItems(s).length, 0); }
+function totalChecked()  { return visibleSections().reduce((a, s) => a + checkedCount(s), 0); }
+function totalItems()    { return visibleSections().reduce((a, s) => a + visibleItems(s).length, 0); }
 
 function esc(s) {
   return String(s)
@@ -1104,7 +1152,25 @@ function esc(s) {
 function renderAll() {
   const root = document.getElementById('sections-root');
   root.innerHTML = '';
-  SECTIONS.forEach(sec => root.appendChild(buildSection(sec)));
+  visibleSections().forEach(sec => root.appendChild(buildSection(sec)));
+
+  // "+ Add Section" — only visible in edit mode (CSS-gated)
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-section-btn';
+  addBtn.textContent = '+ Add Section';
+  addBtn.addEventListener('click', addSectionPrompt);
+  root.appendChild(addBtn);
+}
+
+function addSectionPrompt() {
+  const title = prompt('New section name:');
+  if (!title || !title.trim()) return;
+  const id = 'cs' + Date.now();
+  S.customSections.push({ id, title: title.trim(), icon: '📋', items: [] });
+  ss(id); // initialise its state
+  save();
+  renderAll();
+  updateProgress();
 }
 
 function buildSection(sec) {
@@ -1120,9 +1186,10 @@ function buildSection(sec) {
 
   div.innerHTML = `
     <div class="section-header" role="button" tabindex="0" aria-expanded="${!st.collapsed}">
-      <span class="section-icon">${sec.icon}</span>
-      <span class="section-title">${esc(sec.title)}</span>
+      <span class="section-icon">${sec.icon || '📋'}</span>
+      <span class="section-title" data-sid="${sec.id}">${esc(sectionTitle(sec))}</span>
       <span class="section-badge ${done ? 'done' : ''}">${chk}/${items.length}</span>
+      <button class="section-del" data-sid="${sec.id}" title="Delete section">✕</button>
       <span class="section-chevron">▼</span>
     </div>
     <div class="section-body">
@@ -1148,6 +1215,50 @@ function buildSection(sec) {
   };
   hdr.addEventListener('click', toggle);
   hdr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+
+  // Rename section title (edit mode) — tap the title
+  const titleEl = div.querySelector('.section-title');
+  titleEl.addEventListener('click', e => {
+    if (!document.body.classList.contains('edit-mode')) return; // let header toggle through
+    e.stopPropagation();
+    const oldT = sectionTitle(sec);
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = oldT;
+    inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-family:var(--font);font-size:16px;font-weight:700;padding:4px 6px;width:100%';
+    titleEl.replaceWith(inp);
+    inp.focus(); inp.select();
+    inp.addEventListener('click', ev => ev.stopPropagation());
+    const commitT = () => {
+      const val = inp.value.trim() || oldT;
+      const cs = S.customSections.find(c => c.id === sec.id);
+      if (cs) cs.title = val; else S.renamedSections[sec.id] = val;
+      save();
+      rerender(sec.id);
+    };
+    inp.addEventListener('blur', commitT);
+    inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); commitT(); } });
+  });
+
+  // Delete whole section (edit mode)
+  div.querySelector('.section-del').addEventListener('click', e => {
+    e.stopPropagation();
+    const items2 = visibleItems(sec);
+    const msg = items2.length
+      ? `Delete "${sectionTitle(sec)}" and its ${items2.length} item${items2.length === 1 ? '' : 's'}?`
+      : `Delete "${sectionTitle(sec)}"?`;
+    if (!confirm(msg)) return;
+    if (S.customSections.some(c => c.id === sec.id)) {
+      S.customSections = S.customSections.filter(c => c.id !== sec.id);
+    } else if (!S.deletedSections.includes(sec.id)) {
+      S.deletedSections.push(sec.id);
+    }
+    delete S.sections[sec.id];
+    delete S.renamedSections[sec.id];
+    save();
+    renderAll();
+    updateProgress();
+  });
 
   // Checkboxes
   div.querySelectorAll('.item-cb').forEach(cb => {
@@ -1259,16 +1370,18 @@ function itemHTML(item, st, sid) {
 }
 
 function rerender(sid) {
-  const sec  = SECTIONS.find(s => s.id === sid);
+  const sec  = findSection(sid);
+  if (!sec) return;
   const root = document.getElementById('sections-root');
-  const old  = root.querySelector(`[data-sid="${sid}"]`);
+  const old  = root.querySelector(`.section[data-sid="${sid}"]`);
   if (old) root.replaceChild(buildSection(sec), old);
   updateProgress();
 }
 
 function refreshBadge(sid) {
-  const sec  = SECTIONS.find(s => s.id === sid);
-  const el   = document.querySelector(`[data-sid="${sid}"]`);
+  const sec  = findSection(sid);
+  if (!sec) return;
+  const el   = document.querySelector(`.section[data-sid="${sid}"]`);
   if (!el) return;
   const items = visibleItems(sec);
   const chk   = checkedCount(sec);
@@ -1278,20 +1391,8 @@ function refreshBadge(sid) {
   el.classList.toggle('all-done', done);
 }
 
-function updateProgress() {
-  const total = totalItems();
-  const chk   = totalChecked();
-  const pct   = total > 0 ? Math.round((chk / total) * 100) : 0;
-
-  document.getElementById('checked-count').textContent = chk;
-  document.getElementById('total-count').textContent   = total;
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-pct').textContent  = pct + '%';
-  document.getElementById('progress-label').textContent =
-    pct === 0   ? 'Ready to go' :
-    pct === 100 ? '✓ All done — ready to roll!' :
-                  pct + '% complete';
-}
+// Top progress widget was removed; per-section badges are handled in buildSection/refreshBadge.
+function updateProgress() { /* no-op */ }
 
 // ════════════════════════════════════════════════
 // JOB INFO
@@ -1300,8 +1401,6 @@ function initJobInfo() {
   const fields = [
     { el: 'fi-name', key: 'name' },
     { el: 'fi-date', key: 'date' },
-    { el: 'fi-addr', key: 'addr' },
-    { el: 'fi-crew', key: 'crew' },
   ];
   fields.forEach(({ el, key }) => {
     const inp = document.getElementById(el);
@@ -1314,17 +1413,17 @@ function initJobInfo() {
 // TOOLBAR
 // ════════════════════════════════════════════════
 document.getElementById('tb-expand').addEventListener('click', () => {
-  SECTIONS.forEach(s => { ss(s.id).collapsed = false; });
+  visibleSections().forEach(s => { ss(s.id).collapsed = false; });
   save(); renderAll(); updateProgress();
 });
 
 document.getElementById('tb-collapse').addEventListener('click', () => {
-  SECTIONS.forEach(s => { ss(s.id).collapsed = true; });
+  visibleSections().forEach(s => { ss(s.id).collapsed = true; });
   save(); renderAll(); updateProgress();
 });
 
 document.getElementById('tb-incomplete').addEventListener('click', () => {
-  SECTIONS.forEach(s => {
+  visibleSections().forEach(s => {
     const items = visibleItems(s);
     const done  = items.length > 0 && checkedCount(s) === items.length;
     ss(s.id).collapsed = done;
@@ -1341,9 +1440,9 @@ btnEdit.addEventListener('click', () => {
   btnEdit.classList.toggle('active', on);
   btnEdit.textContent = on ? '✅' : '✏️';
   if (on) {
-    SECTIONS.forEach(s => { ss(s.id).collapsed = false; });
+    visibleSections().forEach(s => { ss(s.id).collapsed = false; });
     save(); renderAll(); updateProgress();
-    toast('Edit mode — tap item text to rename', false);
+    toast('Edit mode — tap titles to rename', false);
   } else {
     toast('Edit mode off', false);
   }
@@ -1355,7 +1454,7 @@ btnEdit.addEventListener('click', () => {
 document.getElementById('btn-reset').addEventListener('click', () => openModal('ov-reset'));
 document.getElementById('reset-cancel').addEventListener('click', () => closeModal('ov-reset'));
 document.getElementById('reset-confirm').addEventListener('click', () => {
-  SECTIONS.forEach(s => { ss(s.id).checked = {}; });
+  visibleSections().forEach(s => { ss(s.id).checked = {}; });
   save();
   closeModal('ov-reset');
   renderAll();
@@ -1403,7 +1502,7 @@ function clipCopy(text) {
 // PRINT
 // ════════════════════════════════════════════════
 document.getElementById('btn-print').addEventListener('click', () => {
-  SECTIONS.forEach(s => { ss(s.id).collapsed = false; });
+  visibleSections().forEach(s => { ss(s.id).collapsed = false; });
   save(); renderAll(); updateProgress();
   setTimeout(() => window.print(), 80);
 });
