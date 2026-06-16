@@ -44,7 +44,7 @@
       color: var(--text);
       font-family: var(--font);
       min-height: 100vh;
-      padding-bottom: calc(86px + env(safe-area-inset-bottom));
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
       -webkit-font-smoothing: antialiased;
       overscroll-behavior-y: none;
     }
@@ -304,33 +304,12 @@
 
     .section.open .section-chevron { transform: rotate(180deg); }
 
-    .section-del {
-      background: none;
-      border: none;
-      color: var(--danger);
-      cursor: pointer;
-      display: none;
-      flex-shrink: 0;
-      font-size: 17px;
-      line-height: 1;
-      opacity: 0.6;
-      padding: 4px 8px;
-      transition: opacity var(--ease);
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .section-del:hover, .section-del:active { opacity: 1; }
-
-    body.edit-mode .section-del { display: block; }
-    body.edit-mode .section-title { cursor: text; }
-
     .add-section-btn {
       background: var(--surface);
       border: 1px dashed var(--border);
       border-radius: var(--radius);
       color: var(--success);
       cursor: pointer;
-      display: none;
       font-family: var(--font);
       font-size: 14px;
       font-weight: 700;
@@ -341,8 +320,6 @@
     }
 
     .add-section-btn:hover, .add-section-btn:active { background: var(--surface-2); }
-
-    body.edit-mode .add-section-btn { display: block; }
 
     /* Smooth grid accordion */
     .section-body {
@@ -374,9 +351,6 @@
     }
 
     .item:active { background: rgba(255,255,255,0.03); }
-
-    body.edit-mode .item { cursor: default; }
-    body.edit-mode .item-text { cursor: text; }
 
     .item:last-of-type { border-bottom: none; }
 
@@ -446,24 +420,6 @@
 
     .item-note.warn { color: var(--warning); font-weight: 700; }
 
-    .item-del {
-      background: none;
-      border: none;
-      color: var(--danger);
-      cursor: pointer;
-      display: none;
-      flex-shrink: 0;
-      font-size: 20px;
-      line-height: 1;
-      opacity: 0.5;
-      padding: 4px 6px;
-      transition: opacity var(--ease);
-    }
-
-    .item-del:hover, .item-del:active { opacity: 1; }
-
-    body.edit-mode .item-del { display: block; }
-
     /* ─── SECTION FOOTER ──────────────────────── */
     .section-footer {
       display: flex;
@@ -494,13 +450,6 @@
       color: var(--accent);
     }
 
-    .sec-btn-add {
-      display: none;
-    }
-
-    body.edit-mode .sec-btn-add { display: inline-flex; }
-    body.edit-mode .sec-btn-add:hover { border-color: var(--success); color: var(--success); }
-
     /* ─── NOTES ───────────────────────────────── */
     .section-notes {
       padding: 6px 0 0;
@@ -526,99 +475,6 @@
     }
 
     .section-notes textarea::placeholder { color: #3a3a3a; }
-
-    /* ─── FOOTER BAR ──────────────────────────── */
-    .footer {
-      background: #000;
-      border-top: 1px solid var(--border);
-      bottom: 0;
-      display: flex;
-      gap: 8px;
-      left: 0;
-      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-      position: fixed;
-      right: 0;
-      z-index: 100;
-    }
-
-    .fbtn {
-      align-items: center;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      display: flex;
-      font-family: var(--font);
-      font-size: 13px;
-      font-weight: 600;
-      gap: 6px;
-      justify-content: center;
-      min-height: 46px;
-      padding: 10px 12px;
-      transition: all var(--ease);
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    #btn-reset {
-      background: var(--danger-dim);
-      border-color: rgba(204,51,51,0.3);
-      color: var(--danger);
-      flex: 0 0 46px;
-    }
-
-    #btn-reset:hover, #btn-reset:active {
-      background: var(--danger);
-      color: #fff;
-    }
-
-    #btn-edit {
-      background: var(--surface-2);
-      color: var(--text-muted);
-      flex: 0 0 46px;
-    }
-
-    #btn-edit:hover, #btn-edit:active {
-      background: var(--surface-3);
-      color: var(--text);
-    }
-
-    #btn-edit.active {
-      background: var(--accent-dim);
-      border-color: rgba(255,204,0,0.4);
-      color: var(--accent);
-    }
-
-    #btn-templates {
-      background: var(--surface-2);
-      color: var(--text-muted);
-      flex: 0 0 46px;
-    }
-
-    #btn-templates:hover, #btn-templates:active {
-      background: var(--surface-3);
-      color: var(--text);
-    }
-
-    #btn-share {
-      background: var(--surface-2);
-      color: var(--text-muted);
-      flex: 1;
-    }
-
-    #btn-share:hover, #btn-share:active {
-      background: var(--surface-3);
-      color: var(--text);
-    }
-
-    #btn-print {
-      background: var(--surface-2);
-      color: var(--text-muted);
-      flex: 0 0 46px;
-    }
-
-    #btn-print:hover, #btn-print:active {
-      background: var(--surface-3);
-      color: var(--text);
-    }
 
     /* ─── MODALS ──────────────────────────────── */
     .overlay {
@@ -800,6 +656,122 @@
       color: var(--accent);
     }
 
+    /* ─── FAB SPEED-DIAL ──────────────────────── */
+    .fab-scrim {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 150;
+    }
+    .fab-scrim.open { opacity: 1; pointer-events: all; }
+
+    .fab {
+      position: fixed;
+      right: 18px;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-size: 30px; font-weight: 400; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      z-index: 170;
+      transition: transform 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab .fab-glyph { transition: transform 0.25s ease; display: inline-block; }
+    .fab.open .fab-glyph { transform: rotate(135deg); }
+    .fab:active { transform: scale(0.94); }
+
+    .fab-menu {
+      position: fixed;
+      right: 18px;
+      bottom: calc(86px + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      z-index: 170;
+      pointer-events: none;
+    }
+    .fab-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px; font-weight: 600;
+      padding: 11px 18px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab-pill:active { background: var(--surface-3); }
+    .fab-menu.open .fab-pill {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+    }
+    .fab-menu.open .fab-pill:nth-child(1) { transition-delay: 0.00s; }
+    .fab-menu.open .fab-pill:nth-child(2) { transition-delay: 0.04s; }
+    .fab-menu.open .fab-pill:nth-child(3) { transition-delay: 0.08s; }
+    .fab-menu.open .fab-pill:nth-child(4) { transition-delay: 0.12s; }
+
+    /* ─── BUILDER EDIT AFFORDANCES ────────────── */
+    .item-text.editable { cursor: text; }
+    .item-rename-input {
+      background: var(--surface-2);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      padding: 4px 6px;
+      width: 100%;
+    }
+    .section-title.editable { cursor: text; }
+    .section-title-input {
+      background: var(--surface-2);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px; font-weight: 700;
+      padding: 4px 6px;
+      width: 100%;
+    }
+    .item-del-builder {
+      background: none; border: none;
+      color: var(--danger);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 20px; line-height: 1;
+      opacity: 0.6;
+      padding: 4px 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .item-del-builder:active { opacity: 1; }
+    .sec-del-builder {
+      background: none; border: none;
+      color: var(--danger);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 17px; line-height: 1;
+      opacity: 0.6;
+      padding: 4px 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sec-del-builder:active { opacity: 1; }
+
     /* ─── TEMPLATE BUILDER (full screen) ─────────── */
     .builder-view {
       background: var(--bg);
@@ -861,8 +833,11 @@
       flex-direction: column;
       gap: 8px;
       overflow-y: auto;
+      min-height: 0;
       padding: 12px 14px;
     }
+
+    .builder-body > * { flex-shrink: 0; }
 
     .builder-footer {
       background: #000;
@@ -889,95 +864,14 @@
 
     .sec-mini-btn:hover, .sec-mini-btn:active { border-color: var(--accent); color: var(--accent); }
 
-    /* ─── PRINT ───────────────────────────────── */
-    @media print {
-      body {
-        background: #fff;
-        color: #000;
-        padding-bottom: 0;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-
-      .header {
-        background: #fff;
-        border-bottom: 2px solid #000;
-        position: static;
-      }
-
-      #logo-img { filter: none; max-height: 40px; }
-
-      .header-count strong { color: #000; }
-      .header-count { color: #555; }
-      .progress-track { background: #ddd; }
-      .progress-fill { background: #000; }
-      .progress-labels { color: #666; }
-      #progress-label, #progress-pct { color: #666; }
-
-      .job-info { background: #f7f7f7; border-bottom: 1px solid #ccc; }
-      .job-field label { color: #555; }
-      .job-field input { background: transparent; border: none; color: #000; padding: 0; font-size: 14px; }
-
-      .toolbar, .footer, .item-del, .sec-btn-add, .section-del, .add-section-btn { display: none !important; }
-
-      .sections { padding: 8px 0; gap: 6px; }
-
-      .section {
-        background: #fff;
-        border: 1px solid #ccc;
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
-
-      .section-header {
-        background: #f0f0f0;
-        border-bottom: 1px solid #ccc;
-        cursor: default;
-        min-height: auto;
-        padding: 8px 12px;
-      }
-
-      .section-title { color: #000; font-size: 13px; }
-      .section-icon { display: none; }
-      .section-chevron { display: none; }
-      .section-badge { background: #e8e8e8; color: #555; font-size: 10px; }
-      .section-badge.done { background: #e8f5e9; color: #2e7d32; }
-
-      .section-body { display: block !important; max-height: none !important; grid-template-rows: unset !important; }
-      .section-inner { overflow: visible; padding: 4px 12px 8px; }
-
-      .item { border-bottom-color: #eee; min-height: auto; padding: 5px 0; }
-      .item.warning-item { background: #fff8f0; border-left-color: #e65100; }
-
-      .item-text { font-size: 13px; color: #000 !important; text-decoration: none !important; }
-      .item.checked .item-text { color: #aaa !important; text-decoration: line-through !important; }
-      .item-note { color: #666; font-size: 10px; }
-      .item-note.warn { color: #e65100; }
-
-      .item-cb {
-        border: 1.5px solid #999;
-        border-radius: 3px;
-        background: #fff;
-      }
-
-      .item-cb:checked { background: #333; border-color: #333; }
-
-      .section-notes textarea { background: #f9f9f9; border: 1px solid #ddd; color: #000; font-size: 12px; min-height: 30px; }
-
-      .sec-btn { display: none !important; }
-    }
-
     /* ─── RESPONSIVE ──────────────────────────── */
     @media (max-width: 380px) {
       .job-info-grid { grid-template-columns: 1fr; }
       .header { padding: 12px 14px 8px; }
-      .footer { gap: 6px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
-      #btn-share { font-size: 11px; gap: 4px; padding: 10px 4px; }
     }
 
     @media (min-width: 600px) {
       .sections { max-width: 680px; margin: 0 auto; }
-      .footer { max-width: 680px; margin: 0 auto; left: 50%; transform: translateX(-50%); right: auto; width: 100%; }
       .job-info { max-width: 680px; margin: 0 auto; }
       .job-info-grid { grid-template-columns: 2fr 1fr; }
     }
@@ -1020,15 +914,6 @@
 
 <!-- ─── SECTIONS ───────────────────────────────── -->
 <div class="sections" id="sections-root"></div>
-
-<!-- ─── FOOTER ─────────────────────────────────── -->
-<footer class="footer">
-  <button class="fbtn" id="btn-reset" title="Reset All">🗑</button>
-  <button class="fbtn" id="btn-edit"  title="Edit Mode">✏️</button>
-  <button class="fbtn" id="btn-templates" title="Templates">📑</button>
-  <button class="fbtn" id="btn-share">🔗 Share Checklist</button>
-  <button class="fbtn" id="btn-print" title="Print">🖨</button>
-</footer>
 
 <!-- ─── RESET MODAL ────────────────────────────── -->
 <div class="overlay" id="ov-reset">
@@ -1088,6 +973,20 @@
   </div>
 </div>
 
+<!-- ─── HOW TO USE MODAL ───────────────────────── -->
+<div class="overlay" id="ov-help">
+  <div class="modal modal-tall">
+    <div class="modal-handle"></div>
+    <h2>How to Use</h2>
+    <p style="margin-bottom:14px;"><strong style="color:var(--text);">Check things off.</strong> Tap a row or its box to mark a load item done. Tap a section header to open or close it. Use “Check All” to clear a whole section at once. Notes can be typed under each section.</p>
+    <p style="margin-bottom:14px;"><strong style="color:var(--text);">Templates</strong> are pre-built load lists for a job type (e.g. Large Commercial). Open Templates to build one, then “Use” it to load that exact checklist for today’s job.</p>
+    <p style="margin-bottom:20px;"><strong style="color:var(--text);">Shared links.</strong> When the boss sends you a checklist link, opening it asks to load that job’s checklist on your phone. Tap OK and you’re ready to load the truck.</p>
+    <div class="modal-row">
+      <button class="mbtn mbtn-accent" id="help-close" style="flex:1">Got it</button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── TEMPLATE BUILDER (full screen) ─────────── -->
 <div class="builder-view" id="builder-view">
   <div class="builder-header">
@@ -1097,6 +996,16 @@
   <div class="builder-body" id="builder-body"></div>
   <div class="builder-footer" id="builder-footer"></div>
 </div>
+
+<!-- ─── FAB SPEED-DIAL ──────────────────────────── -->
+<div class="fab-scrim" id="fab-scrim"></div>
+<div class="fab-menu" id="fab-menu">
+  <button class="fab-pill" id="fab-share">🔗 Share Checklist</button>
+  <button class="fab-pill" id="fab-templates">📑 Templates</button>
+  <button class="fab-pill" id="fab-reset">🗑 Reset Checklist</button>
+  <button class="fab-pill" id="fab-help">❓ How to Use</button>
+</div>
+<button class="fab" id="fab-main" aria-label="Actions"><span class="fab-glyph">+</span></button>
 
 <!-- ─── TOAST ──────────────────────────────────── -->
 <div class="toast" id="toast"></div>
@@ -1347,24 +1256,6 @@ function renderAll() {
   const root = document.getElementById('sections-root');
   root.innerHTML = '';
   visibleSections().forEach(sec => root.appendChild(buildSection(sec)));
-
-  // "+ Add Section" — only visible in edit mode (CSS-gated)
-  const addBtn = document.createElement('button');
-  addBtn.className = 'add-section-btn';
-  addBtn.textContent = '+ Add Section';
-  addBtn.addEventListener('click', addSectionPrompt);
-  root.appendChild(addBtn);
-}
-
-function addSectionPrompt() {
-  const title = prompt('New section name:');
-  if (!title || !title.trim()) return;
-  const id = 'cs' + Date.now();
-  S.customSections.push({ id, title: title.trim(), icon: '📋', items: [] });
-  ss(id); // initialise its state
-  save();
-  renderAll();
-  updateProgress();
 }
 
 function buildSection(sec) {
@@ -1383,7 +1274,6 @@ function buildSection(sec) {
       <span class="section-icon">${sec.icon || '📋'}</span>
       <span class="section-title" data-sid="${sec.id}">${esc(sectionTitle(sec))}</span>
       <span class="section-badge ${done ? 'done' : ''}">${chk}/${items.length}</span>
-      <button class="section-del" data-sid="${sec.id}" title="Delete section">✕</button>
       <span class="section-chevron">▼</span>
     </div>
     <div class="section-body">
@@ -1391,7 +1281,6 @@ function buildSection(sec) {
         ${items.map(it => itemHTML(it, st, sec.id)).join('')}
         <div class="section-footer">
           <button class="sec-btn sec-btn-checkall" data-sid="${sec.id}">${allCheckedNow ? '☐ Uncheck All' : '☑ Check All'}</button>
-          <button class="sec-btn sec-btn-add" data-sid="${sec.id}">+ Add Item</button>
         </div>
         <div class="section-notes">
           <textarea placeholder="Section notes…" data-sid="${sec.id}">${esc(st.notes || '')}</textarea>
@@ -1410,50 +1299,6 @@ function buildSection(sec) {
   hdr.addEventListener('click', toggle);
   hdr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
 
-  // Rename section title (edit mode) — tap the title
-  const titleEl = div.querySelector('.section-title');
-  titleEl.addEventListener('click', e => {
-    if (!document.body.classList.contains('edit-mode')) return; // let header toggle through
-    e.stopPropagation();
-    const oldT = sectionTitle(sec);
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = oldT;
-    inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-family:var(--font);font-size:16px;font-weight:700;padding:4px 6px;width:100%';
-    titleEl.replaceWith(inp);
-    inp.focus(); inp.select();
-    inp.addEventListener('click', ev => ev.stopPropagation());
-    const commitT = () => {
-      const val = inp.value.trim() || oldT;
-      const cs = S.customSections.find(c => c.id === sec.id);
-      if (cs) cs.title = val; else S.renamedSections[sec.id] = val;
-      save();
-      rerender(sec.id);
-    };
-    inp.addEventListener('blur', commitT);
-    inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); commitT(); } });
-  });
-
-  // Delete whole section (edit mode)
-  div.querySelector('.section-del').addEventListener('click', e => {
-    e.stopPropagation();
-    const items2 = visibleItems(sec);
-    const msg = items2.length
-      ? `Delete "${sectionTitle(sec)}" and its ${items2.length} item${items2.length === 1 ? '' : 's'}?`
-      : `Delete "${sectionTitle(sec)}"?`;
-    if (!confirm(msg)) return;
-    if (S.customSections.some(c => c.id === sec.id)) {
-      S.customSections = S.customSections.filter(c => c.id !== sec.id);
-    } else if (!S.deletedSections.includes(sec.id)) {
-      S.deletedSections.push(sec.id);
-    }
-    delete S.sections[sec.id];
-    delete S.renamedSections[sec.id];
-    save();
-    renderAll();
-    updateProgress();
-  });
-
   // Checkboxes
   div.querySelectorAll('.item-cb').forEach(cb => {
     cb.addEventListener('change', () => {
@@ -1465,53 +1310,13 @@ function buildSection(sec) {
     });
   });
 
-  // Whole-row tap toggles the checkbox (not in edit mode, ignore taps on the checkbox itself)
+  // Whole-row tap toggles the checkbox (ignore taps on the checkbox itself)
   div.querySelectorAll('.item').forEach(row => {
     row.addEventListener('click', e => {
-      if (document.body.classList.contains('edit-mode')) return;
-      if (e.target.closest('.item-cb') || e.target.closest('.item-del')) return;
+      if (e.target.closest('.item-cb')) return;
       const cb = row.querySelector('.item-cb');
       cb.checked = !cb.checked;
       cb.dispatchEvent(new Event('change'));
-    });
-  });
-
-  // Delete buttons
-  div.querySelectorAll('.item-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const iid = btn.dataset.iid;
-      if (st.customItems.some(ci => ci.id === iid)) {
-        st.customItems = st.customItems.filter(ci => ci.id !== iid);
-      } else {
-        if (!st.deleted.includes(iid)) st.deleted.push(iid);
-      }
-      delete st.checked[iid];
-      save();
-      rerender(sec.id);
-    });
-  });
-
-  // Inline rename (edit mode)
-  div.querySelectorAll('.item-text[data-iid]').forEach(el => {
-    el.addEventListener('click', () => {
-      if (!document.body.classList.contains('edit-mode')) return;
-      const iid = el.dataset.iid;
-      const old = el.textContent;
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.value = old;
-      inp.style.cssText = 'background:var(--surface-2);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-family:var(--font);font-size:16px;padding:4px 6px;width:100%';
-      el.replaceWith(inp);
-      inp.focus(); inp.select();
-      const commit = () => {
-        const val = inp.value.trim() || old;
-        const ci = st.customItems.find(c => c.id === iid);
-        if (ci) ci.text = val; else st.renamed[iid] = val;
-        save();
-        rerender(sec.id);
-      };
-      inp.addEventListener('blur', commit);
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } });
     });
   });
 
@@ -1521,17 +1326,6 @@ function buildSection(sec) {
     const all = visibleItems(sec);
     const allOn = all.every(it => st.checked[it.id]);
     all.forEach(it => { st.checked[it.id] = !allOn; });
-    save();
-    rerender(sec.id);
-    updateProgress();
-  });
-
-  // Add Item
-  div.querySelector('.sec-btn-add').addEventListener('click', e => {
-    e.stopPropagation();
-    const text = prompt('New item name:');
-    if (!text || !text.trim()) return;
-    st.customItems.push({ id: 'c' + Date.now(), text: text.trim() });
     save();
     rerender(sec.id);
     updateProgress();
@@ -1559,7 +1353,6 @@ function itemHTML(item, st, sid) {
         <div class="item-text" data-iid="${item.id}" data-sid="${sid}">${esc(text)}</div>
         ${note ? `<div class="item-note${warn ? ' warn' : ''}">${esc(note)}</div>` : ''}
       </div>
-      <button class="item-del" data-iid="${item.id}" data-sid="${sid}" title="Remove">×</button>
     </div>`;
 }
 
@@ -1626,26 +1419,8 @@ document.getElementById('tb-incomplete').addEventListener('click', () => {
 });
 
 // ════════════════════════════════════════════════
-// EDIT MODE
-// ════════════════════════════════════════════════
-const btnEdit = document.getElementById('btn-edit');
-btnEdit.addEventListener('click', () => {
-  const on = document.body.classList.toggle('edit-mode');
-  btnEdit.classList.toggle('active', on);
-  btnEdit.textContent = on ? '✅' : '✏️';
-  if (on) {
-    visibleSections().forEach(s => { ss(s.id).collapsed = false; });
-    save(); renderAll(); updateProgress();
-    toast('Edit mode — tap titles to rename', false);
-  } else {
-    toast('Edit mode off', false);
-  }
-});
-
-// ════════════════════════════════════════════════
 // RESET
 // ════════════════════════════════════════════════
-document.getElementById('btn-reset').addEventListener('click', () => openModal('ov-reset'));
 document.getElementById('reset-cancel').addEventListener('click', () => closeModal('ov-reset'));
 document.getElementById('reset-confirm').addEventListener('click', () => {
   visibleSections().forEach(s => { ss(s.id).checked = {}; });
@@ -1671,21 +1446,32 @@ function applyTemplate(tpl) {
 
   const allSecs = [...SECTIONS, ...(tpl.customSections || [])];
   allSecs.forEach(sec => {
-    const selected     = (tpl.selections  && tpl.selections[sec.id])  || [];
+    const selected      = (tpl.selections  && tpl.selections[sec.id])  || [];
     const extraAll      = (tpl.customItems && tpl.customItems[sec.id]) || [];
     const extraSelected = extraAll.filter(it => selected.includes(it.id));
     const isCustomSec   = !SECTIONS.some(s => s.id === sec.id);
 
     if (!selected.length) {
       if (!isCustomSec) S.deletedSections.push(sec.id);
-      return; // custom section with nothing selected is simply omitted
+      return;
     }
     if (isCustomSec) S.customSections.push(JSON.parse(JSON.stringify(sec)));
+
+    const secRenamed = {};
+    if (tpl.renames) {
+      selected.forEach(iid => { if (tpl.renames[iid] != null) secRenamed[iid] = tpl.renames[iid]; });
+    }
+
     S.sections[sec.id] = {
       ...blankSectionState(),
       deleted:     (sec.items || []).filter(it => !selected.includes(it.id)).map(it => it.id),
       customItems: JSON.parse(JSON.stringify(extraSelected)),
+      renamed:     secRenamed,
     };
+
+    if (tpl.sectionRenames && tpl.sectionRenames[sec.id] != null) {
+      S.renamedSections[sec.id] = tpl.sectionRenames[sec.id];
+    }
   });
 }
 
@@ -1761,10 +1547,6 @@ function renderTemplatesList() {
   }));
 }
 
-document.getElementById('btn-templates').addEventListener('click', () => {
-  renderTemplatesList();
-  openModal('ov-templates');
-});
 document.getElementById('tpl-close').addEventListener('click', () => closeModal('ov-templates'));
 document.getElementById('tpl-new').addEventListener('click', () => {
   closeModal('ov-templates');
@@ -1778,12 +1560,15 @@ document.getElementById('tpl-from-current').addEventListener('click', () => {
 // ════════════════════════════════════════════════
 // TEMPLATE BUILDER
 // ════════════════════════════════════════════════
-let builderState = null; // { editingId, name, selections: {sid:[iid,...]}, customItems: {sid:[{id,text}]}, customSections: [{id,title,icon,items:[]}] }
+let builderState = null; // { editingId, name, selections: {sid:[iid,...]}, customItems: {sid:[{id,text}]}, customSections: [{id,title,icon,items:[]}], renames: {iid:text}, sectionRenames: {sid:title} }
 
 function builderItemsFor(sec) {
   const extra = (builderState.customItems[sec.id]) || [];
   return [...(sec.items || []), ...extra];
 }
+
+function builderItemText(it)  { return builderState.renames[it.id] || it.text; }
+function builderSecTitle(sec) { return builderState.sectionRenames[sec.id] || sec.title; }
 
 function openBuilder(tpl) {
   builderState = tpl ? {
@@ -1792,12 +1577,16 @@ function openBuilder(tpl) {
     selections: JSON.parse(JSON.stringify(tpl.selections || {})),
     customItems: JSON.parse(JSON.stringify(tpl.customItems || {})),
     customSections: JSON.parse(JSON.stringify(tpl.customSections || [])),
+    renames: JSON.parse(JSON.stringify(tpl.renames || {})),
+    sectionRenames: JSON.parse(JSON.stringify(tpl.sectionRenames || {})),
   } : {
     editingId: null,
     name: '',
     selections: {},
     customItems: {},
     customSections: [],
+    renames: {},
+    sectionRenames: {},
   };
   renderBuilder();
   renderBuilderFooter();
@@ -1807,6 +1596,8 @@ function openBuilder(tpl) {
 function openBuilderFromCurrent() {
   const selections = {};
   const customItems = {};
+  const renames = {};
+  const sectionRenames = {};
   SECTIONS.forEach(sec => {
     if (S.deletedSections.includes(sec.id)) { selections[sec.id] = []; return; }
     const st = ss(sec.id);
@@ -1815,10 +1606,12 @@ function openBuilderFromCurrent() {
       customItems[sec.id] = JSON.parse(JSON.stringify(st.customItems));
       selections[sec.id].push(...st.customItems.map(ci => ci.id));
     }
+    if (st.renamed) Object.assign(renames, st.renamed);
   });
+  Object.assign(sectionRenames, S.renamedSections || {});
   const customSections = JSON.parse(JSON.stringify(S.customSections));
   customSections.forEach(cs => { selections[cs.id] = cs.items.map(it => it.id); });
-  builderState = { editingId: null, name: '', selections, customItems, customSections };
+  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames };
   renderBuilder();
   renderBuilderFooter();
   document.getElementById('builder-view').classList.add('open');
@@ -1855,6 +1648,8 @@ function buildBuilderSection(sec) {
   const items    = builderItemsFor(sec);
   const selected = builderState.selections[sec.id] || (builderState.selections[sec.id] = []);
   const chk      = selected.length;
+  const isCustomSec = !SECTIONS.some(s => s.id === sec.id);
+  const customItemIds = new Set((builderState.customItems[sec.id] || []).map(ci => ci.id));
 
   const div = document.createElement('div');
   div.className = 'section';
@@ -1862,22 +1657,24 @@ function buildBuilderSection(sec) {
   div.innerHTML = `
     <div class="section-header" role="button" tabindex="0">
       <span class="section-icon">${sec.icon || '📋'}</span>
-      <span class="section-title">${esc(sec.title)}</span>
+      <span class="section-title editable">${esc(builderSecTitle(sec))}</span>
       <span class="section-badge ${chk && chk === items.length ? 'done' : ''}">${chk}/${items.length}</span>
       <button class="sec-mini-btn" data-act="all">All</button>
       <button class="sec-mini-btn" data-act="none">None</button>
+      ${isCustomSec ? '<button class="sec-del-builder" title="Delete section">✕</button>' : ''}
       <span class="section-chevron">▼</span>
     </div>
     <div class="section-body">
       <div class="section-inner">
         ${items.map(it => `
-          <label class="item">
+          <div class="item" data-iid="${it.id}">
             <input type="checkbox" class="item-cb" data-iid="${it.id}" ${selected.includes(it.id) ? 'checked' : ''}>
             <div class="item-body">
-              <div class="item-text">${esc(it.text)}</div>
+              <div class="item-text editable" data-iid="${it.id}">${esc(builderItemText(it))}</div>
               ${it.note ? `<div class="item-note${it.warning ? ' warn' : ''}">${esc(it.note)}</div>` : ''}
             </div>
-          </label>`).join('')}
+            ${customItemIds.has(it.id) ? `<button class="item-del-builder" data-iid="${it.id}" title="Remove">×</button>` : ''}
+          </div>`).join('')}
         <div class="section-footer">
           <button class="sec-btn builder-additem" data-sid="${sec.id}">+ add item</button>
         </div>
@@ -1887,8 +1684,46 @@ function buildBuilderSection(sec) {
   const hdr = div.querySelector('.section-header');
   hdr.addEventListener('click', e => {
     if (e.target.closest('.sec-mini-btn')) return;
+    if (e.target.closest('.section-title')) return;
+    if (e.target.closest('.sec-del-builder')) return;
     div.classList.toggle('open');
   });
+
+  const titleEl = div.querySelector('.section-title');
+  titleEl.addEventListener('click', e => {
+    e.stopPropagation();
+    const oldT = builderSecTitle(sec);
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'section-title-input';
+    inp.value = oldT;
+    titleEl.replaceWith(inp);
+    inp.focus(); inp.select();
+    inp.addEventListener('click', ev => ev.stopPropagation());
+    const commit = () => {
+      const val = inp.value.trim() || oldT;
+      const cs = builderState.customSections.find(c => c.id === sec.id);
+      if (cs) cs.title = val; else builderState.sectionRenames[sec.id] = val;
+      const replacement = buildBuilderSection(sec);
+      replacement.classList.toggle('open', div.classList.contains('open'));
+      div.replaceWith(replacement);
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
+  });
+
+  const secDel = div.querySelector('.sec-del-builder');
+  if (secDel) {
+    secDel.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm(`Delete section "${builderSecTitle(sec)}"?`)) return;
+      builderState.customSections = builderState.customSections.filter(c => c.id !== sec.id);
+      delete builderState.selections[sec.id];
+      delete builderState.customItems[sec.id];
+      delete builderState.sectionRenames[sec.id];
+      renderBuilder();
+    });
+  }
 
   div.querySelectorAll('.sec-mini-btn').forEach(b => {
     b.addEventListener('click', e => {
@@ -1906,6 +1741,43 @@ function buildBuilderSection(sec) {
       if (cb.checked) { if (!sel.includes(cb.dataset.iid)) sel.push(cb.dataset.iid); }
       else { builderState.selections[sec.id] = sel.filter(x => x !== cb.dataset.iid); }
       refreshBuilderBadge(sec, div);
+    });
+  });
+
+  div.querySelectorAll('.item-text.editable').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const iid = el.dataset.iid;
+      const oldText = el.textContent;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'item-rename-input';
+      inp.value = oldText;
+      el.replaceWith(inp);
+      inp.focus(); inp.select();
+      const commit = () => {
+        const val = inp.value.trim() || oldText;
+        const ci = (builderState.customItems[sec.id] || []).find(c => c.id === iid);
+        if (ci) ci.text = val; else builderState.renames[iid] = val;
+        const replacement = buildBuilderSection(sec);
+        replacement.classList.toggle('open', div.classList.contains('open'));
+        div.replaceWith(replacement);
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
+    });
+  });
+
+  div.querySelectorAll('.item-del-builder').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const iid = btn.dataset.iid;
+      builderState.customItems[sec.id] = (builderState.customItems[sec.id] || []).filter(c => c.id !== iid);
+      builderState.selections[sec.id] = (builderState.selections[sec.id] || []).filter(x => x !== iid);
+      delete builderState.renames[iid];
+      const replacement = buildBuilderSection(sec);
+      replacement.classList.add('open');
+      div.replaceWith(replacement);
     });
   });
 
@@ -1959,6 +1831,8 @@ function commitBuilder(mode) {
     selections: builderState.selections,
     customItems: builderState.customItems,
     customSections: builderState.customSections,
+    renames: builderState.renames,
+    sectionRenames: builderState.sectionRenames,
   };
 
   if (mode === 'update' && builderState.editingId) {
@@ -1985,11 +1859,11 @@ document.getElementById('builder-cancel').addEventListener('click', () => {
 // ════════════════════════════════════════════════
 // SHARE
 // ════════════════════════════════════════════════
-document.getElementById('btn-share').addEventListener('click', () => {
+function openShareModal() {
   const url = window.location.href.split('#')[0].split('?')[0];
   document.getElementById('share-url-display').textContent = url;
   openModal('ov-share');
-});
+}
 
 document.getElementById('share-cancel').addEventListener('click', () => closeModal('ov-share'));
 document.getElementById('share-copy').addEventListener('click', () => {
@@ -2022,7 +1896,10 @@ function clipCopy(text) {
 // SHARE TEMPLATE (per-job link — separate from the blank-app share above)
 // ════════════════════════════════════════════════
 function encodeTemplateForUrl(tpl) {
-  const payload = JSON.stringify({ n: tpl.name, sel: tpl.selections, ci: tpl.customItems, cs: tpl.customSections });
+  const payload = JSON.stringify({
+    n: tpl.name, sel: tpl.selections, ci: tpl.customItems, cs: tpl.customSections,
+    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}
+  });
   const utf8Bytes = encodeURIComponent(payload).replace(/%([0-9A-F]{2})/g,
     (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   return btoa(utf8Bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -2080,7 +1957,10 @@ function checkIncomingTemplateLink() {
   }
   const name = decoded.n || 'Shared Checklist';
   if (confirm(`Load checklist "${name}" for this job? This replaces your current checklist.`)) {
-    applyTemplate({ name, selections: decoded.sel, customItems: decoded.ci, customSections: decoded.cs });
+    applyTemplate({
+      name, selections: decoded.sel, customItems: decoded.ci, customSections: decoded.cs,
+      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}
+    });
     save();
     renderAll();
     updateProgress();
@@ -2088,15 +1968,6 @@ function checkIncomingTemplateLink() {
   }
   history.replaceState(null, '', window.location.pathname + window.location.search);
 }
-
-// ════════════════════════════════════════════════
-// PRINT
-// ════════════════════════════════════════════════
-document.getElementById('btn-print').addEventListener('click', () => {
-  visibleSections().forEach(s => { ss(s.id).collapsed = false; });
-  save(); renderAll(); updateProgress();
-  setTimeout(() => window.print(), 80);
-});
 
 // ════════════════════════════════════════════════
 // MODAL HELPERS
@@ -2107,6 +1978,40 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.overlay').forEach(ov => {
   ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
 });
+
+// ════════════════════════════════════════════════
+// FAB SPEED-DIAL
+// ════════════════════════════════════════════════
+const fabMain  = document.getElementById('fab-main');
+const fabMenu  = document.getElementById('fab-menu');
+const fabScrim = document.getElementById('fab-scrim');
+
+function setFab(open) {
+  fabMain.classList.toggle('open', open);
+  fabMenu.classList.toggle('open', open);
+  fabScrim.classList.toggle('open', open);
+}
+fabMain.addEventListener('click', () => setFab(!fabMain.classList.contains('open')));
+fabScrim.addEventListener('click', () => setFab(false));
+
+document.getElementById('fab-share').addEventListener('click', () => {
+  setFab(false);
+  openShareModal();
+});
+document.getElementById('fab-templates').addEventListener('click', () => {
+  setFab(false);
+  renderTemplatesList();
+  openModal('ov-templates');
+});
+document.getElementById('fab-reset').addEventListener('click', () => {
+  setFab(false);
+  openModal('ov-reset');
+});
+document.getElementById('fab-help').addEventListener('click', () => {
+  setFab(false);
+  openModal('ov-help');
+});
+document.getElementById('help-close').addEventListener('click', () => closeModal('ov-help'));
 
 // ════════════════════════════════════════════════
 // TOAST
