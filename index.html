@@ -73,71 +73,61 @@
       flex-shrink: 0;
     }
 
-    #logo-wordmark {
-      display: none;
+    .header-titles {
+      display: flex;
       flex-direction: column;
+      flex: 1;
+      min-width: 0;
     }
 
-    #logo-wordmark .wm-title {
-      font-size: 20px;
+    .header-title {
+      font-size: 19px;
       font-weight: 900;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       color: var(--accent);
       text-transform: uppercase;
       line-height: 1;
     }
 
-    #logo-wordmark .wm-sub {
+    .header-sub {
       font-size: 9px;
       font-weight: 600;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.18em;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-top: 3px;
+      margin-top: 4px;
     }
 
-    .header-progress-wrap {
-      flex: 1;
-      text-align: right;
-    }
-
-    .header-count {
-      font-size: 13px;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .header-count strong {
-      color: var(--accent);
-      font-size: 16px;
+    .progress-row {
+      align-items: center;
+      display: flex;
+      gap: 10px;
     }
 
     .progress-track {
       background: var(--surface-3);
       border-radius: 99px;
-      height: 5px;
+      flex: 1;
+      height: 7px;
       overflow: hidden;
-      margin-top: 6px;
     }
 
     .progress-fill {
-      height: 100%;
       background: var(--accent);
       border-radius: 99px;
+      height: 100%;
       width: 0%;
       transition: width 0.35s ease;
     }
 
-    .progress-labels {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 4px;
-      font-size: 11px;
+    .progress-count {
       color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
     }
 
-    #progress-label { font-style: italic; }
-    #progress-pct   { color: var(--text-muted); }
+    .progress-count strong { color: var(--accent); font-size: 14px; }
 
     /* ─── JOB INFO ────────────────────────────── */
     .job-info {
@@ -749,28 +739,65 @@
       padding: 4px 6px;
       width: 100%;
     }
-    .item-del-builder {
-      background: none; border: none;
-      color: var(--danger);
+    /* Swipe-left to delete (builder) */
+    .swipe { position: relative; overflow: hidden; }
+    .section-inner .swipe { border-bottom: 1px solid var(--surface-3); }
+    .section-inner .swipe:last-of-type { border-bottom: none; }
+    .swipe-del {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 88px;
+      border: none;
+      background: var(--danger);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 13px; font-weight: 700;
       cursor: pointer;
-      flex-shrink: 0;
-      font-size: 20px; line-height: 1;
-      opacity: 0.6;
-      padding: 4px 6px;
       -webkit-tap-highlight-color: transparent;
     }
-    .item-del-builder:active { opacity: 1; }
-    .sec-del-builder {
-      background: none; border: none;
-      color: var(--danger);
+    .swipe-front {
+      position: relative;
+      background: var(--surface);
+      transform: translateX(0);
+      touch-action: pan-y;
+      will-change: transform;
+    }
+
+    /* Subnote add/edit (builder) */
+    .item-note-edit {
       cursor: pointer;
-      flex-shrink: 0;
-      font-size: 17px; line-height: 1;
-      opacity: 0.6;
-      padding: 4px 8px;
+      font-size: 11px;
+      margin-top: 3px;
+      color: var(--text-muted);
       -webkit-tap-highlight-color: transparent;
     }
-    .sec-del-builder:active { opacity: 1; }
+    .item-note-edit.empty { color: var(--accent); opacity: 0.85; font-weight: 600; }
+    .item-note-input {
+      background: var(--surface-2);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      margin-top: 3px;
+      padding: 3px 6px;
+      width: 100%;
+    }
+
+    /* Restore deleted defaults (builder) */
+    .restore-btn {
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 12px;
+      text-align: center;
+      transition: background var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .restore-btn:hover, .restore-btn:active { background: var(--surface-2); }
 
     /* ─── TEMPLATE BUILDER (full screen) ─────────── */
     .builder-view {
@@ -883,11 +910,15 @@
 <header class="header">
   <div class="header-top">
     <img src="Brotec Logo no BG.png" id="logo-img" alt="Brotec Blacktop"
-      onerror="this.style.display='none';document.getElementById('logo-wordmark').style.display='flex'">
-    <div id="logo-wordmark">
-      <span class="wm-title">Brotec Blacktop</span>
-      <span class="wm-sub">Job Checklist</span>
+      onerror="this.style.visibility='hidden'">
+    <div class="header-titles">
+      <span class="header-title">Job Checklist</span>
+      <span class="header-sub">Brotec Blacktop</span>
     </div>
+  </div>
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-count"><strong id="checked-count">0</strong>/<span id="total-count">0</span></div>
   </div>
 </header>
 
@@ -1174,7 +1205,7 @@ const SECTIONS = [
 const LS_KEY = 'brotec-v1';
 
 function blankSectionState() {
-  return { collapsed: false, notes: '', checked: {}, customItems: [], renamed: {}, deleted: [] };
+  return { collapsed: false, notes: '', checked: {}, customItems: [], renamed: {}, deleted: [], noteOverrides: {} };
 }
 
 function blankState() {
@@ -1182,10 +1213,12 @@ function blankState() {
   return {
     jobInfo: { name: '', date: today },
     sections: {},
-    customSections: [],   // [{ id, title, icon, items: [] }]
-    deletedSections: [],  // base section ids that were removed
-    renamedSections: {},  // baseId -> custom title
-    templates: [],        // [{ id, name, createdAt, selections, customItems, customSections }]
+    customSections: [],         // [{ id, title, icon, items: [] }]
+    deletedSections: [],        // base section ids hidden by the active template
+    renamedSections: {},        // baseId -> custom title
+    templates: [],              // [{ id, name, createdAt, selections, customItems, customSections, renames, sectionRenames, notes }]
+    masterDeletedItems: [],     // master item ids deleted everywhere (permanent catalog prune)
+    masterDeletedSections: [],  // master section ids deleted everywhere
   };
 }
 
@@ -1202,6 +1235,8 @@ if (!Array.isArray(S.customSections))  S.customSections  = [];
 if (!Array.isArray(S.deletedSections)) S.deletedSections = [];
 if (!S.renamedSections || typeof S.renamedSections !== 'object') S.renamedSections = {};
 if (!Array.isArray(S.templates)) S.templates = [];
+if (!Array.isArray(S.masterDeletedItems)) S.masterDeletedItems = [];
+if (!Array.isArray(S.masterDeletedSections)) S.masterDeletedSections = [];
 
 function ss(id) {
   if (!S.sections[id]) S.sections[id] = blankSectionState();
@@ -1217,7 +1252,7 @@ function save() {
 // ════════════════════════════════════════════════
 // Base sections (minus deleted) followed by any custom sections the user added
 function visibleSections() {
-  const base = SECTIONS.filter(s => !S.deletedSections.includes(s.id));
+  const base = SECTIONS.filter(s => !S.deletedSections.includes(s.id) && !S.masterDeletedSections.includes(s.id));
   return [...base, ...S.customSections];
 }
 
@@ -1231,7 +1266,7 @@ function sectionTitle(sec) {
 
 function visibleItems(sec) {
   const st = ss(sec.id);
-  const base = (sec.items || []).filter(it => !st.deleted.includes(it.id));
+  const base = (sec.items || []).filter(it => !st.deleted.includes(it.id) && !S.masterDeletedItems.includes(it.id));
   return [...base, ...st.customItems];
 }
 
@@ -1343,7 +1378,7 @@ function buildSection(sec) {
 function itemHTML(item, st, sid) {
   const chk  = st.checked[item.id] || false;
   const text = (st.renamed && st.renamed[item.id]) ? st.renamed[item.id] : item.text;
-  const note = item.note || '';
+  const note = (st.noteOverrides && st.noteOverrides[item.id] !== undefined) ? st.noteOverrides[item.id] : (item.note || '');
   const warn = item.warning || false;
 
   return `
@@ -1378,8 +1413,17 @@ function refreshBadge(sid) {
   el.classList.toggle('all-done', done);
 }
 
-// Top progress widget was removed; per-section badges are handled in buildSection/refreshBadge.
-function updateProgress() { /* no-op */ }
+// Dashboard progress bar: completion across EVERY item in the active checklist.
+function updateProgress() {
+  const total = totalItems();
+  const chk   = totalChecked();
+  const fill  = document.getElementById('progress-fill');
+  const cc    = document.getElementById('checked-count');
+  const tc    = document.getElementById('total-count');
+  if (cc) cc.textContent = chk;
+  if (tc) tc.textContent = total;
+  if (fill) fill.style.width = (total ? Math.round((chk / total) * 100) : 0) + '%';
+}
 
 // ════════════════════════════════════════════════
 // JOB INFO
@@ -1461,12 +1505,17 @@ function applyTemplate(tpl) {
     if (tpl.renames) {
       selected.forEach(iid => { if (tpl.renames[iid] != null) secRenamed[iid] = tpl.renames[iid]; });
     }
+    const secNotes = {};
+    if (tpl.notes) {
+      selected.forEach(iid => { if (tpl.notes[iid] !== undefined) secNotes[iid] = tpl.notes[iid]; });
+    }
 
     S.sections[sec.id] = {
       ...blankSectionState(),
-      deleted:     (sec.items || []).filter(it => !selected.includes(it.id)).map(it => it.id),
-      customItems: JSON.parse(JSON.stringify(extraSelected)),
-      renamed:     secRenamed,
+      deleted:       (sec.items || []).filter(it => !selected.includes(it.id)).map(it => it.id),
+      customItems:   JSON.parse(JSON.stringify(extraSelected)),
+      renamed:       secRenamed,
+      noteOverrides: secNotes,
     };
 
     if (tpl.sectionRenames && tpl.sectionRenames[sec.id] != null) {
@@ -1560,15 +1609,26 @@ document.getElementById('tpl-from-current').addEventListener('click', () => {
 // ════════════════════════════════════════════════
 // TEMPLATE BUILDER
 // ════════════════════════════════════════════════
-let builderState = null; // { editingId, name, selections: {sid:[iid,...]}, customItems: {sid:[{id,text}]}, customSections: [{id,title,icon,items:[]}], renames: {iid:text}, sectionRenames: {sid:title} }
+let builderState = null; // { editingId, name, selections:{sid:[iid]}, customItems:{sid:[{id,text}]}, customSections:[...], renames:{iid:text}, sectionRenames:{sid:title}, notes:{iid:text} }
 
 function builderItemsFor(sec) {
   const extra = (builderState.customItems[sec.id]) || [];
-  return [...(sec.items || []), ...extra];
+  const base  = (sec.items || []).filter(it => !S.masterDeletedItems.includes(it.id));
+  return [...base, ...extra];
+}
+
+function builderSections() {
+  return [...SECTIONS.filter(s => !S.masterDeletedSections.includes(s.id)), ...builderState.customSections];
 }
 
 function builderItemText(it)  { return builderState.renames[it.id] || it.text; }
 function builderSecTitle(sec) { return builderState.sectionRenames[sec.id] || sec.title; }
+function builderItemNote(it)  {
+  return (builderState.notes && builderState.notes[it.id] !== undefined) ? builderState.notes[it.id] : (it.note || '');
+}
+function builderItemIsCustom(sec, iid) {
+  return (builderState.customItems[sec.id] || []).some(c => c.id === iid);
+}
 
 function openBuilder(tpl) {
   builderState = tpl ? {
@@ -1579,6 +1639,7 @@ function openBuilder(tpl) {
     customSections: JSON.parse(JSON.stringify(tpl.customSections || [])),
     renames: JSON.parse(JSON.stringify(tpl.renames || {})),
     sectionRenames: JSON.parse(JSON.stringify(tpl.sectionRenames || {})),
+    notes: JSON.parse(JSON.stringify(tpl.notes || {})),
   } : {
     editingId: null,
     name: '',
@@ -1587,6 +1648,7 @@ function openBuilder(tpl) {
     customSections: [],
     renames: {},
     sectionRenames: {},
+    notes: {},
   };
   renderBuilder();
   renderBuilderFooter();
@@ -1598,20 +1660,24 @@ function openBuilderFromCurrent() {
   const customItems = {};
   const renames = {};
   const sectionRenames = {};
+  const notes = {};
   SECTIONS.forEach(sec => {
-    if (S.deletedSections.includes(sec.id)) { selections[sec.id] = []; return; }
+    if (S.deletedSections.includes(sec.id) || S.masterDeletedSections.includes(sec.id)) { selections[sec.id] = []; return; }
     const st = ss(sec.id);
-    selections[sec.id] = sec.items.filter(it => !st.deleted.includes(it.id)).map(it => it.id);
+    selections[sec.id] = sec.items
+      .filter(it => !st.deleted.includes(it.id) && !S.masterDeletedItems.includes(it.id))
+      .map(it => it.id);
     if (st.customItems && st.customItems.length) {
       customItems[sec.id] = JSON.parse(JSON.stringify(st.customItems));
       selections[sec.id].push(...st.customItems.map(ci => ci.id));
     }
     if (st.renamed) Object.assign(renames, st.renamed);
+    if (st.noteOverrides) Object.assign(notes, st.noteOverrides);
   });
   Object.assign(sectionRenames, S.renamedSections || {});
   const customSections = JSON.parse(JSON.stringify(S.customSections));
   customSections.forEach(cs => { selections[cs.id] = cs.items.map(it => it.id); });
-  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames };
+  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames, notes };
   renderBuilder();
   renderBuilderFooter();
   document.getElementById('builder-view').classList.add('open');
@@ -1620,14 +1686,17 @@ function openBuilderFromCurrent() {
 function closeBuilder() {
   document.getElementById('builder-view').classList.remove('open');
   builderState = null;
+  // Master-list deletions/restorations made in the builder affect the live
+  // checklist — re-render it so changes show without a page reload.
+  renderAll();
+  updateProgress();
 }
 
 function renderBuilder() {
   document.getElementById('builder-name').value = builderState.name;
   const root = document.getElementById('builder-body');
   root.innerHTML = '';
-  const allSecs = [...SECTIONS, ...builderState.customSections];
-  allSecs.forEach(sec => root.appendChild(buildBuilderSection(sec)));
+  builderSections().forEach(sec => root.appendChild(buildBuilderSection(sec)));
 
   const addSecBtn = document.createElement('button');
   addSecBtn.className = 'add-section-btn';
@@ -1642,53 +1711,142 @@ function renderBuilder() {
     renderBuilder();
   });
   root.appendChild(addSecBtn);
+  updateRestoreBtn();
+}
+
+// Restore defaults button — appended to the builder body whenever the master list
+// has permanent deletions. Re-runnable on its own (no full re-render needed).
+function updateRestoreBtn() {
+  const root = document.getElementById('builder-body');
+  if (!root) return;
+  const existing = root.querySelector('.restore-btn');
+  if (existing) existing.remove();
+  const deletedCount = S.masterDeletedItems.length + S.masterDeletedSections.length;
+  if (!deletedCount) return;
+  const restore = document.createElement('button');
+  restore.className = 'restore-btn';
+  restore.textContent = `↩ Restore ${deletedCount} deleted default${deletedCount === 1 ? '' : 's'}`;
+  restore.addEventListener('click', () => {
+    S.masterDeletedItems = [];
+    S.masterDeletedSections = [];
+    save();
+    renderBuilder();
+    toast('Default items restored', true);
+  });
+  root.appendChild(restore);
+}
+
+// Apple-style swipe-left to reveal a Delete button. Works with touch + mouse (pointer events).
+let _openSwipe = null;
+function closeOpenSwipe() {
+  if (_openSwipe) {
+    _openSwipe.style.transition = 'transform 0.2s ease';
+    _openSwipe.style.transform = 'translateX(0)';
+    _openSwipe._open = false;
+    _openSwipe = null;
+  }
+}
+function attachSwipe(front, onDelete) {
+  const MAX = 88, TH = 44;
+  let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horiz = false, moved = false;
+  front.addEventListener('pointerdown', e => {
+    if (e.target.closest('.swipe-del')) return;
+    if (_openSwipe && _openSwipe !== front) closeOpenSwipe();
+    startX = e.clientX; startY = e.clientY;
+    dragging = true; decided = false; horiz = false; moved = false;
+    front.style.transition = 'none';
+  });
+  front.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const mx = e.clientX - startX, my = e.clientY - startY;
+    if (!decided && (Math.abs(mx) > 6 || Math.abs(my) > 6)) { decided = true; horiz = Math.abs(mx) > Math.abs(my); }
+    if (!horiz) return;
+    moved = true;
+    e.preventDefault();
+    const baseX = front._open ? -MAX : 0;
+    dx = Math.max(-MAX, Math.min(0, baseX + mx));
+    front.style.transform = `translateX(${dx}px)`;
+  });
+  const finish = () => {
+    if (!dragging) return;
+    dragging = false;
+    front.style.transition = 'transform 0.2s ease';
+    if (horiz) {
+      const open = dx <= -TH;
+      front.style.transform = `translateX(${open ? -MAX : 0}px)`;
+      front._open = open;
+      if (open) _openSwipe = front;
+      else if (_openSwipe === front) _openSwipe = null;
+    }
+  };
+  front.addEventListener('pointerup', finish);
+  front.addEventListener('pointercancel', finish);
+  // Swallow the click that follows a horizontal swipe so it doesn't toggle/rename.
+  front.addEventListener('click', e => {
+    if (moved && horiz) { e.preventDefault(); e.stopPropagation(); moved = false; }
+  }, true);
+  const del = front.parentElement.querySelector('.swipe-del');
+  if (del) del.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); closeOpenSwipe(); onDelete(); });
 }
 
 function buildBuilderSection(sec) {
   const items    = builderItemsFor(sec);
   const selected = builderState.selections[sec.id] || (builderState.selections[sec.id] = []);
   const chk      = selected.length;
-  const isCustomSec = !SECTIONS.some(s => s.id === sec.id);
-  const customItemIds = new Set((builderState.customItems[sec.id] || []).map(ci => ci.id));
 
   const div = document.createElement('div');
   div.className = 'section';
   div.dataset.sid = sec.id;
   div.innerHTML = `
-    <div class="section-header" role="button" tabindex="0">
-      <span class="section-icon">${sec.icon || '📋'}</span>
-      <span class="section-title editable">${esc(builderSecTitle(sec))}</span>
-      <span class="section-badge ${chk && chk === items.length ? 'done' : ''}">${chk}/${items.length}</span>
-      <button class="sec-mini-btn" data-act="all">All</button>
-      <button class="sec-mini-btn" data-act="none">None</button>
-      ${isCustomSec ? '<button class="sec-del-builder" title="Delete section">✕</button>' : ''}
-      <span class="section-chevron">▼</span>
+    <div class="swipe">
+      <button class="swipe-del" data-del="section">Delete</button>
+      <div class="swipe-front section-header" role="button" tabindex="0">
+        <span class="section-icon">${sec.icon || '📋'}</span>
+        <span class="section-title editable">${esc(builderSecTitle(sec))}</span>
+        <span class="section-badge ${chk && chk === items.length ? 'done' : ''}">${chk}/${items.length}</span>
+        <button class="sec-mini-btn" data-act="all">All</button>
+        <button class="sec-mini-btn" data-act="none">None</button>
+        <span class="section-chevron">▼</span>
+      </div>
     </div>
     <div class="section-body">
       <div class="section-inner">
-        ${items.map(it => `
-          <div class="item" data-iid="${it.id}">
-            <input type="checkbox" class="item-cb" data-iid="${it.id}" ${selected.includes(it.id) ? 'checked' : ''}>
-            <div class="item-body">
-              <div class="item-text editable" data-iid="${it.id}">${esc(builderItemText(it))}</div>
-              ${it.note ? `<div class="item-note${it.warning ? ' warn' : ''}">${esc(it.note)}</div>` : ''}
+        ${items.map(it => {
+          const note = builderItemNote(it);
+          return `
+          <div class="swipe">
+            <button class="swipe-del" data-del="item" data-iid="${it.id}">Delete</button>
+            <div class="swipe-front item" data-iid="${it.id}">
+              <input type="checkbox" class="item-cb" data-iid="${it.id}" ${selected.includes(it.id) ? 'checked' : ''}>
+              <div class="item-body">
+                <div class="item-text editable" data-iid="${it.id}">${esc(builderItemText(it))}</div>
+                <div class="item-note-edit ${note ? '' : 'empty'}" data-iid="${it.id}">${note ? esc(note) : '+ add note'}</div>
+              </div>
             </div>
-            ${customItemIds.has(it.id) ? `<button class="item-del-builder" data-iid="${it.id}" title="Remove">×</button>` : ''}
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
         <div class="section-footer">
           <button class="sec-btn builder-additem" data-sid="${sec.id}">+ add item</button>
         </div>
       </div>
     </div>`;
 
+  const replaceSelf = (keepOpen) => {
+    const repl = buildBuilderSection(sec);
+    repl.classList.toggle('open', keepOpen);
+    div.replaceWith(repl);
+  };
+
+  // Header tap toggles collapse (ignore mini-buttons, title, swipe-delete)
   const hdr = div.querySelector('.section-header');
   hdr.addEventListener('click', e => {
     if (e.target.closest('.sec-mini-btn')) return;
     if (e.target.closest('.section-title')) return;
-    if (e.target.closest('.sec-del-builder')) return;
+    if (e.target.closest('.swipe-del')) return;
     div.classList.toggle('open');
   });
 
+  // Rename section title
   const titleEl = div.querySelector('.section-title');
   titleEl.addEventListener('click', e => {
     e.stopPropagation();
@@ -1700,31 +1858,34 @@ function buildBuilderSection(sec) {
     titleEl.replaceWith(inp);
     inp.focus(); inp.select();
     inp.addEventListener('click', ev => ev.stopPropagation());
+    inp.addEventListener('pointerdown', ev => ev.stopPropagation());
     const commit = () => {
       const val = inp.value.trim() || oldT;
       const cs = builderState.customSections.find(c => c.id === sec.id);
       if (cs) cs.title = val; else builderState.sectionRenames[sec.id] = val;
-      const replacement = buildBuilderSection(sec);
-      replacement.classList.toggle('open', div.classList.contains('open'));
-      div.replaceWith(replacement);
+      replaceSelf(div.classList.contains('open'));
     };
     inp.addEventListener('blur', commit);
     inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
   });
 
-  const secDel = div.querySelector('.sec-del-builder');
-  if (secDel) {
-    secDel.addEventListener('click', e => {
-      e.stopPropagation();
-      if (!confirm(`Delete section "${builderSecTitle(sec)}"?`)) return;
+  // Swipe-to-delete the whole section
+  attachSwipe(div.querySelector('.section-header'), () => {
+    const isCustom = builderState.customSections.some(c => c.id === sec.id);
+    if (!confirm(`Delete section "${builderSecTitle(sec)}"${isCustom ? '' : ' from every checklist'}?`)) return;
+    if (isCustom) {
       builderState.customSections = builderState.customSections.filter(c => c.id !== sec.id);
       delete builderState.selections[sec.id];
       delete builderState.customItems[sec.id];
       delete builderState.sectionRenames[sec.id];
-      renderBuilder();
-    });
-  }
+    } else {
+      if (!S.masterDeletedSections.includes(sec.id)) S.masterDeletedSections.push(sec.id);
+      save();
+    }
+    renderBuilder();
+  });
 
+  // All / None
   div.querySelectorAll('.sec-mini-btn').forEach(b => {
     b.addEventListener('click', e => {
       e.stopPropagation();
@@ -1735,6 +1896,7 @@ function buildBuilderSection(sec) {
     });
   });
 
+  // Checkbox select / deselect
   div.querySelectorAll('.item-cb').forEach(cb => {
     cb.addEventListener('change', () => {
       const sel = builderState.selections[sec.id] || (builderState.selections[sec.id] = []);
@@ -1744,6 +1906,7 @@ function buildBuilderSection(sec) {
     });
   });
 
+  // Rename item text
   div.querySelectorAll('.item-text.editable').forEach(el => {
     el.addEventListener('click', e => {
       e.stopPropagation();
@@ -1755,32 +1918,61 @@ function buildBuilderSection(sec) {
       inp.value = oldText;
       el.replaceWith(inp);
       inp.focus(); inp.select();
+      inp.addEventListener('pointerdown', ev => ev.stopPropagation());
       const commit = () => {
         const val = inp.value.trim() || oldText;
         const ci = (builderState.customItems[sec.id] || []).find(c => c.id === iid);
         if (ci) ci.text = val; else builderState.renames[iid] = val;
-        const replacement = buildBuilderSection(sec);
-        replacement.classList.toggle('open', div.classList.contains('open'));
-        div.replaceWith(replacement);
+        replaceSelf(true);
       };
       inp.addEventListener('blur', commit);
       inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
     });
   });
 
-  div.querySelectorAll('.item-del-builder').forEach(btn => {
-    btn.addEventListener('click', e => {
+  // Add / edit subnote
+  div.querySelectorAll('.item-note-edit').forEach(el => {
+    el.addEventListener('click', e => {
       e.stopPropagation();
-      const iid = btn.dataset.iid;
-      builderState.customItems[sec.id] = (builderState.customItems[sec.id] || []).filter(c => c.id !== iid);
-      builderState.selections[sec.id] = (builderState.selections[sec.id] || []).filter(x => x !== iid);
-      delete builderState.renames[iid];
-      const replacement = buildBuilderSection(sec);
-      replacement.classList.add('open');
-      div.replaceWith(replacement);
+      const iid = el.dataset.iid;
+      const cur = el.classList.contains('empty') ? '' : el.textContent;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'item-note-input';
+      inp.value = cur;
+      inp.placeholder = 'Add note (e.g. check blades / replace)';
+      el.replaceWith(inp);
+      inp.focus(); inp.select();
+      inp.addEventListener('pointerdown', ev => ev.stopPropagation());
+      const commit = () => {
+        if (!builderState.notes) builderState.notes = {};
+        builderState.notes[iid] = inp.value.trim();
+        replaceSelf(true);
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
     });
   });
 
+  // Swipe-to-delete each item
+  div.querySelectorAll('.swipe-front.item').forEach(front => {
+    const iid = front.dataset.iid;
+    attachSwipe(front, () => {
+      if (builderItemIsCustom(sec, iid)) {
+        builderState.customItems[sec.id] = (builderState.customItems[sec.id] || []).filter(c => c.id !== iid);
+      } else {
+        if (!S.masterDeletedItems.includes(iid)) S.masterDeletedItems.push(iid);
+        save();
+      }
+      builderState.selections[sec.id] = (builderState.selections[sec.id] || []).filter(x => x !== iid);
+      delete builderState.renames[iid];
+      if (builderState.notes) delete builderState.notes[iid];
+      replaceSelf(true);
+      updateRestoreBtn();
+    });
+  });
+
+  // Add custom item
   div.querySelector('.builder-additem').addEventListener('click', e => {
     e.stopPropagation();
     const text = prompt('New item name:');
@@ -1790,9 +1982,7 @@ function buildBuilderSection(sec) {
     builderState.customItems[sec.id].push({ id, text: text.trim() });
     if (!builderState.selections[sec.id]) builderState.selections[sec.id] = [];
     builderState.selections[sec.id].push(id);
-    const replacement = buildBuilderSection(sec);
-    replacement.classList.add('open');
-    div.replaceWith(replacement);
+    replaceSelf(true);
   });
 
   return div;
@@ -1833,6 +2023,7 @@ function commitBuilder(mode) {
     customSections: builderState.customSections,
     renames: builderState.renames,
     sectionRenames: builderState.sectionRenames,
+    notes: builderState.notes || {},
   };
 
   if (mode === 'update' && builderState.editingId) {
@@ -1898,7 +2089,7 @@ function clipCopy(text) {
 function encodeTemplateForUrl(tpl) {
   const payload = JSON.stringify({
     n: tpl.name, sel: tpl.selections, ci: tpl.customItems, cs: tpl.customSections,
-    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}
+    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}, nt: tpl.notes || {}
   });
   const utf8Bytes = encodeURIComponent(payload).replace(/%([0-9A-F]{2})/g,
     (_, hex) => String.fromCharCode(parseInt(hex, 16)));
@@ -1959,7 +2150,7 @@ function checkIncomingTemplateLink() {
   if (confirm(`Load checklist "${name}" for this job? This replaces your current checklist.`)) {
     applyTemplate({
       name, selections: decoded.sel, customItems: decoded.ci, customSections: decoded.cs,
-      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}
+      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}, notes: decoded.nt || {}
     });
     save();
     renderAll();

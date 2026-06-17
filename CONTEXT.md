@@ -23,6 +23,10 @@ hosted free on GitHub Pages so crew can open it on any phone.
 ## What the app does
 
 ### Live checklist (read-only structurally)
+- **Dashboard header**: BB logo on the left + a "JOB CHECKLIST" title, with a live overall
+  progress bar (`checked / total` across **every** item in the active checklist). The bar fills
+  as items get checked. By default the home screen shows the full checklist; using a template
+  swaps in that template's subset (and the bar's total updates to match).
 - 13 sections of equipment/material items (Fuel & Fluids, Equipment Prep, Crack Sealing,
   Sealcoating, Materials, General Supplies, Safety, Cleaning, Post-Sealing, Binder, Tools,
   Backup, Pre-Departure).
@@ -45,21 +49,31 @@ A template is a reusable **selection** of which sections/items belong to a job t
 (e.g. "Large Commercial" vs "Small Residential"), plus any custom items/sections and renames.
 - **Template Builder** (full-screen): scroll through all 13 sections, tap checkboxes to include
   items, **All/None** per section, **add custom items**, **add custom sections**, **rename any
-  item or section**, and **delete custom items/sections**. Save as new or update an existing one.
+  item or section**, and **add/edit a subnote** under any item (e.g. "check blades / replace").
+  Save as new or update an existing one.
+- **Swipe-left to delete** (Apple-style) any item or section in the builder. Deleting a built-in
+  (master) item/section is **permanent across the whole app** (the default checklist and all
+  future templates) — a "↩ Restore N deleted defaults" button appears in the builder to undo all
+  master deletions. Deleting a custom item/section just removes it.
 - **Use** a template to load that exact checklist for today's job (warns before clearing
   in-progress checks).
 - **Share** a template as a self-contained `#tpl=…` link — a crew member opens it on their own
-  phone, confirms, and gets that exact checklist. The link encodes the full structure (including
-  renames), so renaming/deleting the source template later doesn't affect links already sent.
-  Corrupted links fail gracefully with a toast; the hash is scrubbed after load so a reload
-  never re-prompts.
+  phone, confirms, and gets that exact checklist (including renames **and subnotes**). The link
+  encodes the full structure, so renaming/deleting the source template later doesn't affect links
+  already sent. Corrupted links fail gracefully with a toast; the hash is scrubbed after load so a
+  reload never re-prompts.
 
 ### Data model (localStorage `brotec-v1`)
-`{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted} },
-customSections, deletedSections, renamedSections, templates[] }`.
-Each template: `{ id, name, createdAt, selections, customItems, customSections, renames,
-sectionRenames }`. Applying a template rebuilds the live `sections`/`customSections`/etc. and
-restores renames; sharing base64url-encodes the template (unicode-safe) into the URL hash.
+`{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted,noteOverrides} },
+customSections, deletedSections, renamedSections, templates[], masterDeletedItems[],
+masterDeletedSections[] }`.
+- `masterDeletedItems` / `masterDeletedSections` — permanent catalog prunes; `visibleSections()`
+  / `visibleItems()` filter them out everywhere. Cleared by the builder's "Restore defaults".
+- Each template: `{ id, name, createdAt, selections, customItems, customSections, renames,
+  sectionRenames, notes }`. Applying a template rebuilds the live `sections`/`customSections`/etc.
+  and restores renames + note overrides. Sharing base64url-encodes the template (unicode-safe,
+  keys `n/sel/ci/cs/rn/sn/nt`) into the URL hash. Note overrides per item live in
+  `sections[id].noteOverrides` (override the baked-in `item.note`; empty string clears a note).
 
 ---
 
@@ -69,7 +83,12 @@ restores renames; sharing base64url-encodes the template (unicode-safe) into the
    published to GitHub Pages + PWA home-screen install.
 3. Removed address/crew fields and the top progress bar; added section add/rename/delete.
 4. Job Templates: checkbox builder, Use/Edit/Share, incoming-link handling.
-5. **This pass** — see below.
+5. Removed edit mode from the live checklist; moved full editing into the builder; replaced the
+   footer with the + FAB speed-dial; deleted Print; fixed the builder scroll bug. (3-agent build.)
+6. Dashboard home (logo + "JOB CHECKLIST" title + live progress bar); swipe-left-to-delete in the
+   builder with permanent master-list prune + "Restore defaults"; add/edit item subnotes in the
+   builder (carried through Use and share links). Verified in headless Chrome — found & fixed two
+   re-render bugs (restore button after item delete; live-checklist propagation on builder close).
 
 ---
 
