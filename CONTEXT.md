@@ -32,6 +32,8 @@ hosted free on GitHub Pages so crew can open it on any phone.
   Backup, Pre-Departure).
 - Tap a row or its box to check it off; tap a section header to collapse/expand; per-section
   **Check All**; free-text notes per section; per-section progress badges.
+- **Press & hold** a section to drag-reorder it; press & hold an item to reorder it within its
+  section. Order persists locally (`S.sectionOrder`, `S.sections[id].order`).
 - Job Name + Date header. Progress is saved to `localStorage` (key `brotec-v1`) and survives
   closing the browser.
 - The day-of checklist is **only for checking off** — there is no structural editing here.
@@ -50,15 +52,19 @@ A template is a reusable **selection** of which sections/items belong to a job t
 - **Template Builder** (full-screen): scroll through all 13 sections, tap checkboxes to include
   items, **All/None** per section, **add custom items**, **add custom sections**, **rename any
   item or section**, **change a section's emoji** (tap the icon → picker), and **add/edit a
-  subnote** under any item (e.g. "check blades / replace"). Save as new or update an existing one.
+  subnote** under any item (e.g. "check blades / replace"), and **press & hold to drag-reorder**
+  sections and items. Save as new or update an existing one.
 - Section expand/collapse animates a JS pixel-height transition (smoother than CSS grid-fr on
   mobile); swipe `will-change` is applied only during an active drag to avoid layer bloat.
+- Drag-to-reorder is a shared `makeSortable()` engine (pointer events, ~250ms long-press, FLIP
+  sibling animation, edge auto-scroll, post-drop click-swallow), used on both surfaces.
 - **Swipe-left to delete** (Apple-style) any item or section in the builder. Deleting a built-in
   (master) item/section is **permanent across the whole app** (the default checklist and all
   future templates) — a "↩ Restore N deleted defaults" button appears in the builder to undo all
   master deletions. Deleting a custom item/section just removes it.
-- **Use** a template to load that exact checklist for today's job (warns before clearing
-  in-progress checks).
+- **Use** a template by tapping its row in the Templates list (loads that exact checklist for
+  today's job; warns before clearing in-progress checks). Each row also has Edit / Share / Delete
+  buttons.
 - **Share** a template as a self-contained `#tpl=…` link — a crew member opens it on their own
   phone, confirms, and gets that exact checklist (including renames **and subnotes**). The link
   encodes the full structure, so renaming/deleting the source template later doesn't affect links
@@ -66,9 +72,11 @@ A template is a reusable **selection** of which sections/items belong to a job t
   reload never re-prompts.
 
 ### Data model (localStorage `brotec-v1`)
-`{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted,noteOverrides} },
-customSections, deletedSections, renamedSections, sectionIcons, templates[], masterDeletedItems[],
-masterDeletedSections[] }`.
+`{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted,noteOverrides,order} },
+customSections, deletedSections, renamedSections, sectionIcons, sectionOrder, templates[],
+masterDeletedItems[], masterDeletedSections[] }`.
+- `sectionOrder` (section ids) and per-section `order` (item ids) drive display order via
+  `applyOrder()`; templates carry `sectionOrder` + `itemOrder`, shared in links as keys `so`/`io`.
 - `sectionIcons` / template `sectionIcons` — per-section emoji overrides (baseId → emoji), applied
   by `applyTemplate` and rendered via `sectionIcon(sec)`; custom sections store their icon on the
   section object.
@@ -98,6 +106,10 @@ masterDeletedSections[] }`.
 7. Changeable section emojis (builder icon picker, carried through Use/share); smoother section
    drop-down (JS pixel-height animation replacing grid-fr) and a builder-lag fix (transient swipe
    `will-change` instead of ~90 permanent compositor layers). Verified in headless Chrome.
+8. Press-and-hold drag-to-reorder for sections and items on both the live checklist and the
+   builder (shared `makeSortable()` with FLIP + auto-scroll); order persists locally and in
+   templates/share links. Templates list: removed the ▶ play button — tapping a row now Uses the
+   template (Edit/Share/Delete buttons kept). Verified in headless Chrome (simulated drags).
 
 ---
 

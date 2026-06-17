@@ -590,14 +590,21 @@
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
+      cursor: pointer;
       display: flex;
-      gap: 10px;
-      justify-content: space-between;
+      gap: 8px;
       padding: 10px 12px;
+      transition: background var(--ease), border-color var(--ease);
+      -webkit-tap-highlight-color: transparent;
     }
 
+    .tpl-item:hover, .tpl-item:active { background: var(--surface-3); border-color: var(--accent); }
+
+    .tpl-item-info { flex: 1; min-width: 0; }
     .tpl-item-name { color: var(--text); font-size: 15px; font-weight: 700; }
     .tpl-item-meta { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+
+    .tpl-go { color: var(--text-muted); flex-shrink: 0; font-size: 20px; line-height: 1; }
 
     .tpl-item-actions { display: flex; flex-shrink: 0; gap: 2px; }
 
@@ -613,7 +620,6 @@
     }
 
     .tpl-act:hover, .tpl-act:active { background: var(--surface-3); color: var(--text); }
-    .tpl-act-use:hover { color: var(--success); }
     .tpl-act-delete:hover { color: var(--danger); }
 
     /* ─── TOAST ───────────────────────────────── */
@@ -763,6 +769,23 @@
     /* will-change is toggled on only during an active drag (see attachSwipe) to
        avoid ~90 permanent compositor layers, which made the builder janky. */
     .swipe-front.swiping { will-change: transform; }
+
+    /* ─── DRAG-TO-REORDER (press & hold) ──────── */
+    .section-list { display: flex; flex-direction: column; gap: 8px; }
+    .drag-placeholder {
+      background: rgba(255,204,0,0.07);
+      border: 2px dashed var(--accent);
+      border-radius: var(--radius);
+      box-sizing: border-box;
+    }
+    .dragging {
+      box-shadow: 0 10px 26px rgba(0,0,0,0.6);
+      opacity: 0.97;
+    }
+    .item.dragging, .swipe.dragging {
+      background: var(--surface-3);
+      border-radius: var(--radius-sm);
+    }
 
     /* Subnote add/edit (builder) */
     .item-note-edit {
@@ -1240,7 +1263,7 @@ const SECTIONS = [
 const LS_KEY = 'brotec-v1';
 
 function blankSectionState() {
-  return { collapsed: false, notes: '', checked: {}, customItems: [], renamed: {}, deleted: [], noteOverrides: {} };
+  return { collapsed: false, notes: '', checked: {}, customItems: [], renamed: {}, deleted: [], noteOverrides: {}, order: [] };
 }
 
 function blankState() {
@@ -1252,7 +1275,8 @@ function blankState() {
     deletedSections: [],        // base section ids hidden by the active template
     renamedSections: {},        // baseId -> custom title
     sectionIcons: {},           // baseId -> custom emoji
-    templates: [],              // [{ id, name, createdAt, selections, customItems, customSections, renames, sectionRenames, notes, sectionIcons }]
+    sectionOrder: [],           // section ids in display order (live checklist)
+    templates: [],              // [{ id, name, createdAt, selections, customItems, customSections, renames, sectionRenames, notes, sectionIcons, sectionOrder, itemOrder }]
     masterDeletedItems: [],     // master item ids deleted everywhere (permanent catalog prune)
     masterDeletedSections: [],  // master section ids deleted everywhere
   };
@@ -1271,6 +1295,7 @@ if (!Array.isArray(S.customSections))  S.customSections  = [];
 if (!Array.isArray(S.deletedSections)) S.deletedSections = [];
 if (!S.renamedSections || typeof S.renamedSections !== 'object') S.renamedSections = {};
 if (!S.sectionIcons || typeof S.sectionIcons !== 'object') S.sectionIcons = {};
+if (!Array.isArray(S.sectionOrder)) S.sectionOrder = [];
 if (!Array.isArray(S.templates)) S.templates = [];
 if (!Array.isArray(S.masterDeletedItems)) S.masterDeletedItems = [];
 if (!Array.isArray(S.masterDeletedSections)) S.masterDeletedSections = [];
@@ -1290,7 +1315,7 @@ function save() {
 // Base sections (minus deleted) followed by any custom sections the user added
 function visibleSections() {
   const base = SECTIONS.filter(s => !S.deletedSections.includes(s.id) && !S.masterDeletedSections.includes(s.id));
-  return [...base, ...S.customSections];
+  return applyOrder([...base, ...S.customSections], S.sectionOrder);
 }
 
 function findSection(id) {
@@ -1308,7 +1333,7 @@ function sectionIcon(sec) {
 function visibleItems(sec) {
   const st = ss(sec.id);
   const base = (sec.items || []).filter(it => !st.deleted.includes(it.id) && !S.masterDeletedItems.includes(it.id));
-  return [...base, ...st.customItems];
+  return applyOrder([...base, ...st.customItems], st.order);
 }
 
 function checkedCount(sec) {
@@ -1323,6 +1348,15 @@ function hasAnyProgress(){ return visibleSections().some(s => checkedCount(s) > 
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Sort a list of {id} objects by an explicit array of ids; unknown ids keep their
+// original relative order at the end (JS sort is stable).
+function applyOrder(list, orderIds) {
+  if (!orderIds || !orderIds.length) return list;
+  const pos = {};
+  orderIds.forEach((id, i) => { pos[id] = i; });
+  return list.slice().sort((a, b) => (pos[a.id] ?? 1e9) - (pos[b.id] ?? 1e9));
 }
 
 // ════════════════════════════════════════════════
@@ -1379,7 +1413,7 @@ function buildSection(sec) {
     </div>
     <div class="section-body">
       <div class="section-inner">
-        ${items.map(it => itemHTML(it, st, sec.id)).join('')}
+        <div class="item-list">${items.map(it => itemHTML(it, st, sec.id)).join('')}</div>
         <div class="section-footer">
           <button class="sec-btn sec-btn-checkall" data-sid="${sec.id}">${allCheckedNow ? '☐ Uncheck All' : '☑ Check All'}</button>
         </div>
@@ -1440,6 +1474,14 @@ function buildSection(sec) {
     save();
   });
 
+  // Press & hold an item to reorder it within this section
+  makeSortable(div.querySelector('.item-list'), {
+    itemSelector: '.item',
+    getId: el => el.dataset.iid,
+    scrollEl: window,
+    onDrop: order => { st.order = order; save(); }
+  });
+
   return div;
 }
 
@@ -1450,7 +1492,7 @@ function itemHTML(item, st, sid) {
   const warn = item.warning || false;
 
   return `
-    <div class="item${chk ? ' checked' : ''}${warn ? ' warning-item' : ''}">
+    <div class="item${chk ? ' checked' : ''}${warn ? ' warning-item' : ''}" data-iid="${item.id}">
       <input type="checkbox" class="item-cb" data-iid="${item.id}" data-sid="${sid}" ${chk ? 'checked' : ''}>
       <div class="item-body">
         <div class="item-text" data-iid="${item.id}" data-sid="${sid}">${esc(text)}</div>
@@ -1554,6 +1596,7 @@ function applyTemplate(tpl) {
   S.deletedSections  = [];
   S.renamedSections   = {};
   S.sectionIcons      = {};
+  S.sectionOrder      = (tpl.sectionOrder || []).slice();
   S.customSections    = [];
   S.sections          = {};
 
@@ -1585,6 +1628,7 @@ function applyTemplate(tpl) {
       customItems:   JSON.parse(JSON.stringify(extraSelected)),
       renamed:       secRenamed,
       noteOverrides: secNotes,
+      order:         (tpl.itemOrder && tpl.itemOrder[sec.id]) ? tpl.itemOrder[sec.id].slice() : [],
     };
 
     if (tpl.sectionRenames && tpl.sectionRenames[sec.id] != null) {
@@ -1631,13 +1675,13 @@ function renderTemplatesList() {
     const { sections, items } = templateCounts(t);
     const dateStr = new Date(t.createdAt).toLocaleDateString();
     return `
-      <div class="tpl-item" data-tid="${t.id}">
+      <div class="tpl-item" data-tid="${t.id}" role="button" tabindex="0">
         <div class="tpl-item-info">
           <div class="tpl-item-name">${esc(t.name)}</div>
-          <div class="tpl-item-meta">${sections} section${sections === 1 ? '' : 's'} · ${items} item${items === 1 ? '' : 's'} · ${dateStr}</div>
+          <div class="tpl-item-meta">${sections} section${sections === 1 ? '' : 's'} · ${items} item${items === 1 ? '' : 's'} · tap to use</div>
         </div>
+        <span class="tpl-go" aria-hidden="true">›</span>
         <div class="tpl-item-actions">
-          <button class="tpl-act tpl-act-use" data-tid="${t.id}" title="Use">▶</button>
           <button class="tpl-act tpl-act-edit" data-tid="${t.id}" title="Edit">✎</button>
           <button class="tpl-act tpl-act-share" data-tid="${t.id}" title="Share">🔗</button>
           <button class="tpl-act tpl-act-delete" data-tid="${t.id}" title="Delete">✕</button>
@@ -1645,10 +1689,14 @@ function renderTemplatesList() {
       </div>`;
   }).join('');
 
-  root.querySelectorAll('.tpl-act-use').forEach(b => b.addEventListener('click', () => {
-    const t = S.templates.find(x => x.id === b.dataset.tid);
-    if (t) useTemplate(t);
-  }));
+  // Tapping the row (anywhere except an action button) uses the template
+  root.querySelectorAll('.tpl-item').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.tpl-act')) return;
+      const t = S.templates.find(x => x.id === row.dataset.tid);
+      if (t) useTemplate(t);
+    });
+  });
   root.querySelectorAll('.tpl-act-edit').forEach(b => b.addEventListener('click', () => {
     const t = S.templates.find(x => x.id === b.dataset.tid);
     if (t) { closeModal('ov-templates'); openBuilder(t); }
@@ -1686,11 +1734,12 @@ let builderState = null; // { editingId, name, selections:{sid:[iid]}, customIte
 function builderItemsFor(sec) {
   const extra = (builderState.customItems[sec.id]) || [];
   const base  = (sec.items || []).filter(it => !S.masterDeletedItems.includes(it.id));
-  return [...base, ...extra];
+  return applyOrder([...base, ...extra], builderState.itemOrder && builderState.itemOrder[sec.id]);
 }
 
 function builderSections() {
-  return [...SECTIONS.filter(s => !S.masterDeletedSections.includes(s.id)), ...builderState.customSections];
+  const base = [...SECTIONS.filter(s => !S.masterDeletedSections.includes(s.id)), ...builderState.customSections];
+  return applyOrder(base, builderState.sectionOrder);
 }
 
 function builderItemText(it)  { return builderState.renames[it.id] || it.text; }
@@ -1714,6 +1763,8 @@ function openBuilder(tpl) {
     sectionRenames: JSON.parse(JSON.stringify(tpl.sectionRenames || {})),
     sectionIcons: JSON.parse(JSON.stringify(tpl.sectionIcons || {})),
     notes: JSON.parse(JSON.stringify(tpl.notes || {})),
+    sectionOrder: (tpl.sectionOrder || []).slice(),
+    itemOrder: JSON.parse(JSON.stringify(tpl.itemOrder || {})),
   } : {
     editingId: null,
     name: '',
@@ -1724,6 +1775,8 @@ function openBuilder(tpl) {
     sectionRenames: {},
     sectionIcons: {},
     notes: {},
+    sectionOrder: [],
+    itemOrder: {},
   };
   renderBuilder();
   renderBuilderFooter();
@@ -1754,7 +1807,11 @@ function openBuilderFromCurrent() {
   Object.assign(sectionIcons, S.sectionIcons || {});
   const customSections = JSON.parse(JSON.stringify(S.customSections));
   customSections.forEach(cs => { selections[cs.id] = cs.items.map(it => it.id); });
-  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames, sectionIcons, notes };
+  // Capture the current on-screen arrangement so the builder opens in the same order
+  const sectionOrder = visibleSections().map(s => s.id);
+  const itemOrder = {};
+  visibleSections().forEach(sec => { itemOrder[sec.id] = visibleItems(sec).map(it => it.id); });
+  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames, sectionIcons, notes, sectionOrder, itemOrder };
   renderBuilder();
   renderBuilderFooter();
   document.getElementById('builder-view').classList.add('open');
@@ -1773,7 +1830,20 @@ function renderBuilder() {
   document.getElementById('builder-name').value = builderState.name;
   const root = document.getElementById('builder-body');
   root.innerHTML = '';
-  builderSections().forEach(sec => root.appendChild(buildBuilderSection(sec)));
+
+  const list = document.createElement('div');
+  list.className = 'section-list';
+  builderSections().forEach(sec => list.appendChild(buildBuilderSection(sec)));
+  root.appendChild(list);
+
+  // Press & hold a section to reorder it
+  makeSortable(list, {
+    itemSelector: '.section',
+    getId: el => el.dataset.sid,
+    scrollEl: root,
+    skipSelector: '.item-list',
+    onDrop: order => { builderState.sectionOrder = order; }
+  });
 
   const addSecBtn = document.createElement('button');
   addSecBtn.className = 'add-section-btn';
@@ -1890,10 +1960,10 @@ function buildBuilderSection(sec) {
     </div>
     <div class="section-body">
       <div class="section-inner">
-        ${items.map(it => {
+        <div class="item-list">${items.map(it => {
           const note = builderItemNote(it);
           return `
-          <div class="swipe">
+          <div class="swipe" data-iid="${it.id}">
             <button class="swipe-del" data-del="item" data-iid="${it.id}">Delete</button>
             <div class="swipe-front item" data-iid="${it.id}">
               <input type="checkbox" class="item-cb" data-iid="${it.id}" ${selected.includes(it.id) ? 'checked' : ''}>
@@ -1903,7 +1973,7 @@ function buildBuilderSection(sec) {
               </div>
             </div>
           </div>`;
-        }).join('')}
+        }).join('')}</div>
         <div class="section-footer">
           <button class="sec-btn builder-additem" data-sid="${sec.id}">+ add item</button>
         </div>
@@ -2076,6 +2146,14 @@ function buildBuilderSection(sec) {
     replaceSelf(true);
   });
 
+  // Press & hold an item to reorder it within this section
+  makeSortable(div.querySelector('.item-list'), {
+    itemSelector: '.swipe',
+    getId: el => el.dataset.iid,
+    scrollEl: document.getElementById('builder-body'),
+    onDrop: order => { builderState.itemOrder[sec.id] = order; }
+  });
+
   return div;
 }
 
@@ -2116,6 +2194,8 @@ function commitBuilder(mode) {
     sectionRenames: builderState.sectionRenames,
     sectionIcons: builderState.sectionIcons || {},
     notes: builderState.notes || {},
+    sectionOrder: builderState.sectionOrder || [],
+    itemOrder: builderState.itemOrder || {},
   };
 
   if (mode === 'update' && builderState.editingId) {
@@ -2181,7 +2261,8 @@ function clipCopy(text) {
 function encodeTemplateForUrl(tpl) {
   const payload = JSON.stringify({
     n: tpl.name, sel: tpl.selections, ci: tpl.customItems, cs: tpl.customSections,
-    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}, nt: tpl.notes || {}, si: tpl.sectionIcons || {}
+    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}, nt: tpl.notes || {}, si: tpl.sectionIcons || {},
+    so: tpl.sectionOrder || [], io: tpl.itemOrder || {}
   });
   const utf8Bytes = encodeURIComponent(payload).replace(/%([0-9A-F]{2})/g,
     (_, hex) => String.fromCharCode(parseInt(hex, 16)));
@@ -2242,7 +2323,8 @@ function checkIncomingTemplateLink() {
   if (confirm(`Load checklist "${name}" for this job? This replaces your current checklist.`)) {
     applyTemplate({
       name, selections: decoded.sel, customItems: decoded.ci, customSections: decoded.cs,
-      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}, notes: decoded.nt || {}, sectionIcons: decoded.si || {}
+      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}, notes: decoded.nt || {}, sectionIcons: decoded.si || {},
+      sectionOrder: decoded.so || [], itemOrder: decoded.io || {}
     });
     save();
     renderAll();
@@ -2283,6 +2365,146 @@ function openEmojiPicker(onPick) {
   openModal('ov-emoji');
 }
 document.getElementById('emoji-cancel').addEventListener('click', () => { _emojiTarget = null; closeModal('ov-emoji'); });
+
+// ════════════════════════════════════════════════
+// DRAG-TO-REORDER (press & hold, pointer events + FLIP)
+// ════════════════════════════════════════════════
+let _dragActive = false;
+
+function makeSortable(container, opts) {
+  // opts: { itemSelector, getId, onDrop, scrollEl, skipSelector }
+  if (!container || container._sortable) return;
+  container._sortable = true;
+  const LONG_PRESS = 250, CANCEL_MOVE = 10;
+
+  container.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (_dragActive) return;
+    const item = e.target.closest(opts.itemSelector);
+    if (!item || item.parentElement !== container) return;
+    if (e.target.closest('input, textarea, button')) return;   // let controls work
+    if (opts.skipSelector && e.target.closest(opts.skipSelector)) return;
+
+    const startX = e.clientX, startY = e.clientY;
+    let armed = true;
+    const preMove = ev => {
+      if (Math.abs(ev.clientY - startY) > CANCEL_MOVE || Math.abs(ev.clientX - startX) > CANCEL_MOVE) teardown();
+    };
+    const teardown = () => {
+      armed = false;
+      clearTimeout(timer);
+      document.removeEventListener('pointermove', preMove);
+      document.removeEventListener('pointerup', teardown);
+      document.removeEventListener('pointercancel', teardown);
+    };
+    const timer = setTimeout(() => {
+      document.removeEventListener('pointermove', preMove);
+      document.removeEventListener('pointerup', teardown);
+      document.removeEventListener('pointercancel', teardown);
+      if (armed) beginDrag(container, opts, item, startY);
+    }, LONG_PRESS);
+    document.addEventListener('pointermove', preMove);
+    document.addEventListener('pointerup', teardown);
+    document.addEventListener('pointercancel', teardown);
+  });
+}
+
+function beginDrag(container, opts, el, pointerStartY) {
+  _dragActive = true;
+  const rect = el.getBoundingClientRect();
+  const grabDY = pointerStartY - rect.top;
+  const height = rect.height;
+  const scroller = (opts.scrollEl && opts.scrollEl !== window) ? opts.scrollEl : document.body;
+  const prevTouch = scroller.style.touchAction;
+  scroller.style.touchAction = 'none';
+
+  const ph = document.createElement('div');
+  ph.className = 'drag-placeholder';
+  ph.style.height = height + 'px';
+  container.insertBefore(ph, el);
+
+  el.classList.add('dragging');
+  el.style.position = 'fixed';
+  el.style.left = rect.left + 'px';
+  el.style.width = rect.width + 'px';
+  el.style.top = rect.top + 'px';
+  el.style.margin = '0';
+  el.style.zIndex = '1000';
+  el.style.pointerEvents = 'none';
+  el.style.transform = 'scale(1.02)';
+  if (navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} }
+
+  let lastY = pointerStartY, lastRef = undefined;
+
+  const positionGap = () => {
+    const sibs = [...container.children].filter(c => c !== el && c !== ph && c.matches(opts.itemSelector));
+    const mid = (lastY - grabDY) + height / 2;
+    let idx = 0;
+    for (const s of sibs) {
+      const r = s.getBoundingClientRect();
+      if (r.top + r.height / 2 < mid) idx++; else break;
+    }
+    const ref = sibs[idx] || (opts.tail ? container.querySelector(opts.tail) : null);
+    if (ref === lastRef) return;
+    lastRef = ref;
+    const movers = [...container.children].filter(c => c !== el && c.matches(opts.itemSelector));
+    const before = movers.map(m => [m, m.getBoundingClientRect().top]);
+    container.insertBefore(ph, ref);
+    before.forEach(([m, top0]) => {
+      const dy = top0 - m.getBoundingClientRect().top;
+      if (!dy) return;
+      m.style.transition = 'none';
+      m.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => { m.style.transition = 'transform 0.16s ease'; m.style.transform = ''; });
+    });
+  };
+
+  const autoScroll = () => {
+    const EDGE = 64, SPEED = 14;
+    if (!opts.scrollEl || opts.scrollEl === window) {
+      const h = window.innerHeight;
+      if (lastY < EDGE) window.scrollBy(0, -SPEED);
+      else if (lastY > h - EDGE) window.scrollBy(0, SPEED);
+    } else {
+      const r = opts.scrollEl.getBoundingClientRect();
+      if (lastY < r.top + EDGE) opts.scrollEl.scrollTop -= SPEED;
+      else if (lastY > r.bottom - EDGE) opts.scrollEl.scrollTop += SPEED;
+    }
+  };
+
+  let raf;
+  const loop = () => {
+    el.style.top = (lastY - grabDY) + 'px';
+    autoScroll();
+    positionGap();
+    raf = requestAnimationFrame(loop);
+  };
+  raf = requestAnimationFrame(loop);
+
+  const onMove = ev => { lastY = ev.clientY; ev.preventDefault(); };
+  const onUp = () => {
+    cancelAnimationFrame(raf);
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onUp);
+    el.classList.remove('dragging');
+    ['position','left','width','top','margin','zIndex','pointerEvents','transform','transition'].forEach(p => { el.style[p] = ''; });
+    container.insertBefore(el, ph);
+    ph.remove();
+    [...container.children].forEach(c => { c.style.transition = ''; c.style.transform = ''; });
+    scroller.style.touchAction = prevTouch;
+    const order = [...container.children].filter(c => c.matches(opts.itemSelector)).map(opts.getId);
+    // swallow the click that the pointerup would otherwise fire after a drag
+    const swallow = ev => { ev.stopPropagation(); ev.preventDefault(); };
+    document.addEventListener('click', swallow, true);
+    setTimeout(() => document.removeEventListener('click', swallow, true), 350);
+    _dragActive = false;
+    if (opts.onDrop) opts.onDrop(order);
+  };
+  document.addEventListener('pointermove', onMove, { passive: false });
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
+}
 
 // ════════════════════════════════════════════════
 // FAB SPEED-DIAL
@@ -2337,6 +2559,15 @@ initJobInfo();
 checkIncomingTemplateLink();
 renderAll();
 updateProgress();
+
+// Press & hold a section to reorder it on the live checklist
+makeSortable(document.getElementById('sections-root'), {
+  itemSelector: '.section',
+  getId: el => el.dataset.sid,
+  scrollEl: window,
+  skipSelector: '.item-list',
+  onDrop: order => { S.sectionOrder = order; save(); }
+});
 </script>
 </body>
 </html>
