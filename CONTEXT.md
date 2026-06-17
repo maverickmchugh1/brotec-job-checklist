@@ -52,8 +52,11 @@ A template is a reusable **selection** of which sections/items belong to a job t
 - **Template Builder** (full-screen): scroll through all 13 sections, tap checkboxes to include
   items, **All/None** per section, **add custom items**, **add custom sections**, **rename any
   item or section**, **change a section's emoji** (tap the icon → picker), and **add/edit a
-  subnote** under any item (e.g. "check blades / replace"), and **press & hold to drag-reorder**
-  sections and items. Save as new or update an existing one.
+  subnote** under any item (e.g. "check blades / replace"), set a **per-item quantity** (− / +
+  stepper, or tap the number to type one), and **press & hold to drag-reorder** sections and
+  items. Save as new or update an existing one. (The Templates list's top buttons are "+ New
+  Template" and "📋 Current List" — the latter opens the builder pre-filled from the current
+  home checklist.)
 - Section expand/collapse animates a JS pixel-height transition (smoother than CSS grid-fr on
   mobile); swipe `will-change` is applied only during an active drag to avoid layer bloat.
 - Drag-to-reorder is a shared `makeSortable()` engine (pointer events, ~250ms long-press, FLIP
@@ -72,9 +75,11 @@ A template is a reusable **selection** of which sections/items belong to a job t
   reload never re-prompts.
 
 ### Data model (localStorage `brotec-v1`)
-`{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted,noteOverrides,order} },
+`{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted,noteOverrides,order,quantities} },
 customSections, deletedSections, renamedSections, sectionIcons, sectionOrder, templates[],
 masterDeletedItems[], masterDeletedSections[] }`.
+- `quantities` (itemId → number > 1) shows as a gold "N×" badge before the item on the live
+  checklist; template field `quantities`, shared in links as key `qy`. Quantity 1 = no badge.
 - `sectionOrder` (section ids) and per-section `order` (item ids) drive display order via
   `applyOrder()`; templates carry `sectionOrder` + `itemOrder`, shared in links as keys `so`/`io`.
 - `sectionIcons` / template `sectionIcons` — per-section emoji overrides (baseId → emoji), applied
@@ -110,6 +115,9 @@ masterDeletedItems[], masterDeletedSections[] }`.
    builder (shared `makeSortable()` with FLIP + auto-scroll); order persists locally and in
    templates/share links. Templates list: removed the ▶ play button — tapping a row now Uses the
    template (Edit/Share/Delete buttons kept). Verified in headless Chrome (simulated drags).
+9. Per-item quantity in the builder (− / + stepper, shown as a "N×" badge on the checklist,
+   carried through Use + share). Templates list polish: removed the "tap to use" hint and ›
+   arrow (restored the date); renamed "From Today's" → "Current List". Verified in headless Chrome.
 
 ---
 
