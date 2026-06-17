@@ -987,6 +987,9 @@
       .job-info-grid { grid-template-columns: 2fr 1fr; }
     }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"></script>
 </head>
 <body>
 
@@ -1345,6 +1348,78 @@ function ss(id) {
 
 function save() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (_) {}
+}
+
+// ════════════════════════════════════════════════
+// FIREBASE SETUP
+// ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDUgV6HUoi_O9LV3EL5U-I9LMOTKm9tZIY",
+  authDomain: "brotec-job-checklist-app.firebaseapp.com",
+  projectId: "brotec-job-checklist-app",
+  storageBucket: "brotec-job-checklist-app.firebasestorage.app",
+  messagingSenderId: "570738919993",
+  appId: "1:570738919993:web:cac04ca9284cc66f2fdbe8",
+  measurementId: "G-NYZL1DHK3E"
+};
+
+let db = null;
+let unsubscribeTemplates = null;
+
+try {
+  const app = firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore(app);
+  console.log('Firebase initialized');
+
+  // Start listening for template changes from other crew members
+  setupTemplatesListener();
+} catch (e) {
+  console.warn('Firebase init failed (may be offline):', e.message);
+}
+
+function setupTemplatesListener() {
+  if (!db) return;
+
+  // Listen for changes to templates in Firestore in real-time
+  unsubscribeTemplates = db.collection('teams').doc('brotec').collection('templates')
+    .onSnapshot(
+      snapshot => {
+        // Update S.templates with latest from Firestore
+        const remoteTpls = [];
+        snapshot.docs.forEach(doc => {
+          remoteTpls.push({ id: doc.id, ...doc.data() });
+        });
+        S.templates = remoteTpls;
+        renderTemplatesList(); // Re-render if templates modal is open
+      },
+      error => console.warn('Templates listener error:', error.message)
+    );
+}
+
+async function saveTplToFirebase(template) {
+  if (!db) {
+    console.warn('Firestore not available, skipping remote save');
+    return;
+  }
+  try {
+    await db.collection('teams').doc('brotec').collection('templates').doc(template.id).set(template);
+    console.log('Template saved to Firestore:', template.id);
+  } catch (e) {
+    console.warn('Failed to save template to Firestore:', e.message);
+  }
+}
+
+async function deleteTplFromFirebase(templateId) {
+  if (!db) {
+    console.warn('Firestore not available, skipping remote delete');
+    return;
+  }
+  try {
+    await db.collection('teams').doc('brotec').collection('templates').doc(templateId).delete();
+    console.log('Template deleted from Firestore:', templateId);
+  } catch (e) {
+    console.warn('Failed to delete template from Firestore:', e.message);
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -1748,12 +1823,13 @@ function renderTemplatesList() {
     const t = S.templates.find(x => x.id === b.dataset.tid);
     if (t) shareTemplate(t);
   }));
-  root.querySelectorAll('.tpl-act-delete').forEach(b => b.addEventListener('click', () => {
+  root.querySelectorAll('.tpl-act-delete').forEach(b => b.addEventListener('click', async () => {
     const t = S.templates.find(x => x.id === b.dataset.tid);
     if (!t) return;
     if (!confirm(`Delete template "${t.name}"? This can't be undone.`)) return;
     S.templates = S.templates.filter(x => x.id !== t.id);
     save();
+    await deleteTplFromFirebase(t.id);
     renderTemplatesList();
     toast('Template deleted', false);
   }));
@@ -2252,7 +2328,7 @@ function renderBuilderFooter() {
   }
 }
 
-function commitBuilder(mode) {
+async function commitBuilder(mode) {
   const name = document.getElementById('builder-name').value.trim();
   if (!name) { toast('Enter a template name', false); document.getElementById('builder-name').focus(); return; }
   const totalSelected = Object.values(builderState.selections).reduce((a, arr) => a + arr.length, 0);
@@ -2272,13 +2348,25 @@ function commitBuilder(mode) {
     itemOrder: builderState.itemOrder || {},
   };
 
+  let template;
   if (mode === 'update' && builderState.editingId) {
     const t = S.templates.find(x => x.id === builderState.editingId);
-    if (t) Object.assign(t, payload);
+    if (t) {
+      Object.assign(t, payload);
+      template = t;
+    }
   } else {
-    S.templates.push({ id: 'tpl' + Date.now(), createdAt: new Date().toISOString(), ...payload });
+    template = { id: 'tpl' + Date.now(), createdAt: new Date().toISOString(), ...payload };
+    S.templates.push(template);
   }
+
   save();
+
+  // Sync to Firestore
+  if (template) {
+    await saveTplToFirebase(template);
+  }
+
   closeBuilder();
   renderTemplatesList();
   openModal('ov-templates');
