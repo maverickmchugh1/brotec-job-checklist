@@ -49,8 +49,10 @@ A template is a reusable **selection** of which sections/items belong to a job t
 (e.g. "Large Commercial" vs "Small Residential"), plus any custom items/sections and renames.
 - **Template Builder** (full-screen): scroll through all 13 sections, tap checkboxes to include
   items, **All/None** per section, **add custom items**, **add custom sections**, **rename any
-  item or section**, and **add/edit a subnote** under any item (e.g. "check blades / replace").
-  Save as new or update an existing one.
+  item or section**, **change a section's emoji** (tap the icon → picker), and **add/edit a
+  subnote** under any item (e.g. "check blades / replace"). Save as new or update an existing one.
+- Section expand/collapse animates a JS pixel-height transition (smoother than CSS grid-fr on
+  mobile); swipe `will-change` is applied only during an active drag to avoid layer bloat.
 - **Swipe-left to delete** (Apple-style) any item or section in the builder. Deleting a built-in
   (master) item/section is **permanent across the whole app** (the default checklist and all
   future templates) — a "↩ Restore N deleted defaults" button appears in the builder to undo all
@@ -65,14 +67,18 @@ A template is a reusable **selection** of which sections/items belong to a job t
 
 ### Data model (localStorage `brotec-v1`)
 `{ jobInfo, sections{ [id]:{collapsed,notes,checked,customItems,renamed,deleted,noteOverrides} },
-customSections, deletedSections, renamedSections, templates[], masterDeletedItems[],
+customSections, deletedSections, renamedSections, sectionIcons, templates[], masterDeletedItems[],
 masterDeletedSections[] }`.
+- `sectionIcons` / template `sectionIcons` — per-section emoji overrides (baseId → emoji), applied
+  by `applyTemplate` and rendered via `sectionIcon(sec)`; custom sections store their icon on the
+  section object.
 - `masterDeletedItems` / `masterDeletedSections` — permanent catalog prunes; `visibleSections()`
   / `visibleItems()` filter them out everywhere. Cleared by the builder's "Restore defaults".
 - Each template: `{ id, name, createdAt, selections, customItems, customSections, renames,
-  sectionRenames, notes }`. Applying a template rebuilds the live `sections`/`customSections`/etc.
-  and restores renames + note overrides. Sharing base64url-encodes the template (unicode-safe,
-  keys `n/sel/ci/cs/rn/sn/nt`) into the URL hash. Note overrides per item live in
+  sectionRenames, sectionIcons, notes }`. Applying a template rebuilds the live
+  `sections`/`customSections`/etc. and restores renames + icons + note overrides. Sharing
+  base64url-encodes the template (unicode-safe, keys `n/sel/ci/cs/rn/sn/nt/si`) into the URL hash.
+  Note overrides per item live in
   `sections[id].noteOverrides` (override the baked-in `item.note`; empty string clears a note).
 
 ---
@@ -89,6 +95,9 @@ masterDeletedSections[] }`.
    builder with permanent master-list prune + "Restore defaults"; add/edit item subnotes in the
    builder (carried through Use and share links). Verified in headless Chrome — found & fixed two
    re-render bugs (restore button after item delete; live-checklist propagation on builder close).
+7. Changeable section emojis (builder icon picker, carried through Use/share); smoother section
+   drop-down (JS pixel-height animation replacing grid-fr) and a builder-lag fix (transient swipe
+   `will-change` instead of ~90 permanent compositor layers). Verified in headless Chrome.
 
 ---
 

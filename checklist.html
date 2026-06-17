@@ -311,19 +311,19 @@
 
     .add-section-btn:hover, .add-section-btn:active { background: var(--surface-2); }
 
-    /* Smooth grid accordion */
+    /* Smooth accordion — JS animates pixel height (GPU-friendlier than grid-fr) */
     .section-body {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 0.28s ease;
+      height: 0;
+      overflow: hidden;
+      transition: height 0.24s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .section.open .section-body { grid-template-rows: 1fr; }
-
     .section-inner {
-      min-height: 0;
-      overflow: hidden;
       padding: 0 14px 10px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .section-body { transition: none; }
     }
 
     /* ─── ITEMS ───────────────────────────────── */
@@ -759,8 +759,10 @@
       background: var(--surface);
       transform: translateX(0);
       touch-action: pan-y;
-      will-change: transform;
     }
+    /* will-change is toggled on only during an active drag (see attachSwipe) to
+       avoid ~90 permanent compositor layers, which made the builder janky. */
+    .swipe-front.swiping { will-change: transform; }
 
     /* Subnote add/edit (builder) */
     .item-note-edit {
@@ -782,6 +784,27 @@
       padding: 3px 6px;
       width: 100%;
     }
+
+    /* Emoji picker */
+    .editable-icon { cursor: pointer; }
+    #ov-emoji { z-index: 500; }  /* above the full-screen builder (z-index 400) */
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+    }
+    .emoji-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+      padding: 9px 0;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .emoji-btn:hover, .emoji-btn:active { background: var(--surface-3); border-color: var(--accent); }
 
     /* Restore deleted defaults (builder) */
     .restore-btn {
@@ -1018,6 +1041,18 @@
   </div>
 </div>
 
+<!-- ─── EMOJI PICKER MODAL ──────────────────────── -->
+<div class="overlay" id="ov-emoji">
+  <div class="modal modal-tall">
+    <div class="modal-handle"></div>
+    <h2>Choose an icon</h2>
+    <div class="emoji-grid" id="emoji-grid"></div>
+    <div class="modal-row" style="margin-top:16px;">
+      <button class="mbtn mbtn-cancel" id="emoji-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── TEMPLATE BUILDER (full screen) ─────────── -->
 <div class="builder-view" id="builder-view">
   <div class="builder-header">
@@ -1216,7 +1251,8 @@ function blankState() {
     customSections: [],         // [{ id, title, icon, items: [] }]
     deletedSections: [],        // base section ids hidden by the active template
     renamedSections: {},        // baseId -> custom title
-    templates: [],              // [{ id, name, createdAt, selections, customItems, customSections, renames, sectionRenames, notes }]
+    sectionIcons: {},           // baseId -> custom emoji
+    templates: [],              // [{ id, name, createdAt, selections, customItems, customSections, renames, sectionRenames, notes, sectionIcons }]
     masterDeletedItems: [],     // master item ids deleted everywhere (permanent catalog prune)
     masterDeletedSections: [],  // master section ids deleted everywhere
   };
@@ -1234,6 +1270,7 @@ let S = (() => {
 if (!Array.isArray(S.customSections))  S.customSections  = [];
 if (!Array.isArray(S.deletedSections)) S.deletedSections = [];
 if (!S.renamedSections || typeof S.renamedSections !== 'object') S.renamedSections = {};
+if (!S.sectionIcons || typeof S.sectionIcons !== 'object') S.sectionIcons = {};
 if (!Array.isArray(S.templates)) S.templates = [];
 if (!Array.isArray(S.masterDeletedItems)) S.masterDeletedItems = [];
 if (!Array.isArray(S.masterDeletedSections)) S.masterDeletedSections = [];
@@ -1262,6 +1299,10 @@ function findSection(id) {
 
 function sectionTitle(sec) {
   return S.renamedSections[sec.id] || sec.title;
+}
+
+function sectionIcon(sec) {
+  return (S.sectionIcons && S.sectionIcons[sec.id]) || sec.icon || '📋';
 }
 
 function visibleItems(sec) {
@@ -1293,6 +1334,31 @@ function renderAll() {
   visibleSections().forEach(sec => root.appendChild(buildSection(sec)));
 }
 
+// Smoothly open/close a section by animating its pixel height (0 ↔ content).
+// animate=false sets the resting state instantly (used on (re)render).
+function setSectionOpen(section, body, open, animate) {
+  if (body._animEnd) { body.removeEventListener('transitionend', body._animEnd); body._animEnd = null; }
+  section.classList.toggle('open', open);
+  if (!animate) {
+    body.style.height = open ? 'auto' : '0px';
+    return;
+  }
+  if (open) {
+    body.style.height = body.scrollHeight + 'px';
+    body._animEnd = e => {
+      if (e.propertyName !== 'height') return;
+      body.style.height = 'auto';            // let it grow/shrink freely at rest
+      body.removeEventListener('transitionend', body._animEnd);
+      body._animEnd = null;
+    };
+    body.addEventListener('transitionend', body._animEnd);
+  } else {
+    body.style.height = body.getBoundingClientRect().height + 'px';
+    void body.offsetHeight;                  // reflow so the next change transitions
+    body.style.height = '0px';
+  }
+}
+
 function buildSection(sec) {
   const st    = ss(sec.id);
   const items = visibleItems(sec);
@@ -1306,7 +1372,7 @@ function buildSection(sec) {
 
   div.innerHTML = `
     <div class="section-header" role="button" tabindex="0" aria-expanded="${!st.collapsed}">
-      <span class="section-icon">${sec.icon || '📋'}</span>
+      <span class="section-icon">${sectionIcon(sec)}</span>
       <span class="section-title" data-sid="${sec.id}">${esc(sectionTitle(sec))}</span>
       <span class="section-badge ${done ? 'done' : ''}">${chk}/${items.length}</span>
       <span class="section-chevron">▼</span>
@@ -1323,11 +1389,13 @@ function buildSection(sec) {
       </div>
     </div>`;
 
-  // Header toggle
-  const hdr = div.querySelector('.section-header');
+  // Header toggle (smooth height animation)
+  const hdr  = div.querySelector('.section-header');
+  const body = div.querySelector('.section-body');
+  setSectionOpen(div, body, !st.collapsed, false);  // resting state, no animation
   const toggle = () => {
     st.collapsed = !st.collapsed;
-    div.classList.toggle('open', !st.collapsed);
+    setSectionOpen(div, body, !st.collapsed, true);
     hdr.setAttribute('aria-expanded', !st.collapsed);
     save();
   };
@@ -1485,6 +1553,7 @@ document.getElementById('reset-confirm').addEventListener('click', () => {
 function applyTemplate(tpl) {
   S.deletedSections  = [];
   S.renamedSections   = {};
+  S.sectionIcons      = {};
   S.customSections    = [];
   S.sections          = {};
 
@@ -1520,6 +1589,9 @@ function applyTemplate(tpl) {
 
     if (tpl.sectionRenames && tpl.sectionRenames[sec.id] != null) {
       S.renamedSections[sec.id] = tpl.sectionRenames[sec.id];
+    }
+    if (tpl.sectionIcons && tpl.sectionIcons[sec.id] != null) {
+      S.sectionIcons[sec.id] = tpl.sectionIcons[sec.id];
     }
   });
 }
@@ -1623,6 +1695,7 @@ function builderSections() {
 
 function builderItemText(it)  { return builderState.renames[it.id] || it.text; }
 function builderSecTitle(sec) { return builderState.sectionRenames[sec.id] || sec.title; }
+function builderSecIcon(sec)  { return builderState.sectionIcons[sec.id] || sec.icon || '📋'; }
 function builderItemNote(it)  {
   return (builderState.notes && builderState.notes[it.id] !== undefined) ? builderState.notes[it.id] : (it.note || '');
 }
@@ -1639,6 +1712,7 @@ function openBuilder(tpl) {
     customSections: JSON.parse(JSON.stringify(tpl.customSections || [])),
     renames: JSON.parse(JSON.stringify(tpl.renames || {})),
     sectionRenames: JSON.parse(JSON.stringify(tpl.sectionRenames || {})),
+    sectionIcons: JSON.parse(JSON.stringify(tpl.sectionIcons || {})),
     notes: JSON.parse(JSON.stringify(tpl.notes || {})),
   } : {
     editingId: null,
@@ -1648,6 +1722,7 @@ function openBuilder(tpl) {
     customSections: [],
     renames: {},
     sectionRenames: {},
+    sectionIcons: {},
     notes: {},
   };
   renderBuilder();
@@ -1660,6 +1735,7 @@ function openBuilderFromCurrent() {
   const customItems = {};
   const renames = {};
   const sectionRenames = {};
+  const sectionIcons = {};
   const notes = {};
   SECTIONS.forEach(sec => {
     if (S.deletedSections.includes(sec.id) || S.masterDeletedSections.includes(sec.id)) { selections[sec.id] = []; return; }
@@ -1675,9 +1751,10 @@ function openBuilderFromCurrent() {
     if (st.noteOverrides) Object.assign(notes, st.noteOverrides);
   });
   Object.assign(sectionRenames, S.renamedSections || {});
+  Object.assign(sectionIcons, S.sectionIcons || {});
   const customSections = JSON.parse(JSON.stringify(S.customSections));
   customSections.forEach(cs => { selections[cs.id] = cs.items.map(it => it.id); });
-  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames, notes };
+  builderState = { editingId: null, name: '', selections, customItems, customSections, renames, sectionRenames, sectionIcons, notes };
   renderBuilder();
   renderBuilderFooter();
   document.getElementById('builder-view').classList.add('open');
@@ -1755,6 +1832,7 @@ function attachSwipe(front, onDelete) {
     startX = e.clientX; startY = e.clientY;
     dragging = true; decided = false; horiz = false; moved = false;
     front.style.transition = 'none';
+    front.classList.add('swiping');
   });
   front.addEventListener('pointermove', e => {
     if (!dragging) return;
@@ -1778,6 +1856,7 @@ function attachSwipe(front, onDelete) {
       if (open) _openSwipe = front;
       else if (_openSwipe === front) _openSwipe = null;
     }
+    setTimeout(() => front.classList.remove('swiping'), 220);
   };
   front.addEventListener('pointerup', finish);
   front.addEventListener('pointercancel', finish);
@@ -1801,7 +1880,7 @@ function buildBuilderSection(sec) {
     <div class="swipe">
       <button class="swipe-del" data-del="section">Delete</button>
       <div class="swipe-front section-header" role="button" tabindex="0">
-        <span class="section-icon">${sec.icon || '📋'}</span>
+        <span class="section-icon editable-icon" title="Change icon">${builderSecIcon(sec)}</span>
         <span class="section-title editable">${esc(builderSecTitle(sec))}</span>
         <span class="section-badge ${chk && chk === items.length ? 'done' : ''}">${chk}/${items.length}</span>
         <button class="sec-mini-btn" data-act="all">All</button>
@@ -1833,17 +1912,29 @@ function buildBuilderSection(sec) {
 
   const replaceSelf = (keepOpen) => {
     const repl = buildBuilderSection(sec);
-    repl.classList.toggle('open', keepOpen);
+    setSectionOpen(repl, repl.querySelector('.section-body'), keepOpen, false);
     div.replaceWith(repl);
   };
 
-  // Header tap toggles collapse (ignore mini-buttons, title, swipe-delete)
+  // Header tap toggles collapse (ignore mini-buttons, title, icon, swipe-delete)
   const hdr = div.querySelector('.section-header');
+  const body = div.querySelector('.section-body');
   hdr.addEventListener('click', e => {
     if (e.target.closest('.sec-mini-btn')) return;
     if (e.target.closest('.section-title')) return;
+    if (e.target.closest('.section-icon')) return;
     if (e.target.closest('.swipe-del')) return;
-    div.classList.toggle('open');
+    setSectionOpen(div, body, !div.classList.contains('open'), true);
+  });
+
+  // Tap the emoji to change the section icon
+  div.querySelector('.section-icon').addEventListener('click', e => {
+    e.stopPropagation();
+    openEmojiPicker(emoji => {
+      const cs = builderState.customSections.find(c => c.id === sec.id);
+      if (cs) cs.icon = emoji; else builderState.sectionIcons[sec.id] = emoji;
+      replaceSelf(div.classList.contains('open'));
+    });
   });
 
   // Rename section title
@@ -2023,6 +2114,7 @@ function commitBuilder(mode) {
     customSections: builderState.customSections,
     renames: builderState.renames,
     sectionRenames: builderState.sectionRenames,
+    sectionIcons: builderState.sectionIcons || {},
     notes: builderState.notes || {},
   };
 
@@ -2089,7 +2181,7 @@ function clipCopy(text) {
 function encodeTemplateForUrl(tpl) {
   const payload = JSON.stringify({
     n: tpl.name, sel: tpl.selections, ci: tpl.customItems, cs: tpl.customSections,
-    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}, nt: tpl.notes || {}
+    rn: tpl.renames || {}, sn: tpl.sectionRenames || {}, nt: tpl.notes || {}, si: tpl.sectionIcons || {}
   });
   const utf8Bytes = encodeURIComponent(payload).replace(/%([0-9A-F]{2})/g,
     (_, hex) => String.fromCharCode(parseInt(hex, 16)));
@@ -2150,7 +2242,7 @@ function checkIncomingTemplateLink() {
   if (confirm(`Load checklist "${name}" for this job? This replaces your current checklist.`)) {
     applyTemplate({
       name, selections: decoded.sel, customItems: decoded.ci, customSections: decoded.cs,
-      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}, notes: decoded.nt || {}
+      renames: decoded.rn || {}, sectionRenames: decoded.sn || {}, notes: decoded.nt || {}, sectionIcons: decoded.si || {}
     });
     save();
     renderAll();
@@ -2169,6 +2261,28 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.overlay').forEach(ov => {
   ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
 });
+
+// ════════════════════════════════════════════════
+// EMOJI PICKER (section icons, used by the builder)
+// ════════════════════════════════════════════════
+const EMOJIS = ['⛽','🔧','🔥','🖌️','📦','🧰','🦺','🧹','🚧','📋','🔩','♻️','✅','🛠️','⚙️','🪣','🧴','🧯','🚿','🌡️','🔌','🔋','💡','🪜','🧤','🥽','👷','🚜','🚛','🛻','⛏️','🪚','📏','📐','✏️','🧲','🪛','🔨','⚡','💧','☀️','🧪','🪨','🛢️','🧱','📷','📹','🗺️','📍','🔑','🎯','⏱️','🚦','🪧'];
+let _emojiTarget = null;
+function openEmojiPicker(onPick) {
+  _emojiTarget = onPick;
+  const grid = document.getElementById('emoji-grid');
+  if (!grid.dataset.built) {
+    grid.innerHTML = EMOJIS.map(e => `<button class="emoji-btn">${e}</button>`).join('');
+    grid.querySelectorAll('.emoji-btn').forEach(b => b.addEventListener('click', () => {
+      const fn = _emojiTarget;
+      _emojiTarget = null;
+      closeModal('ov-emoji');
+      if (fn) fn(b.textContent);
+    }));
+    grid.dataset.built = '1';
+  }
+  openModal('ov-emoji');
+}
+document.getElementById('emoji-cancel').addEventListener('click', () => { _emojiTarget = null; closeModal('ov-emoji'); });
 
 // ════════════════════════════════════════════════
 // FAB SPEED-DIAL
